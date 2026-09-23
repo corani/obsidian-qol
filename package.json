@@ -1,0 +1,20 @@
+{
+	"name": "obsidian-qol",
+	"version": "0.1.0",
+	"private": true,
+	"scripts": {
+		"dev": "node esbuild.config.mjs",
+		"build": "node esbuild.config.mjs production",
+		"type-check": "tsc --noEmit"
+	},
+	"devDependencies": {
+		"@types/node": "^22.0.0",
+		"builtin-modules": "^3.3.0",
+		"esbuild": "^0.21.0",
+		"obsidian": "latest",
+		"typescript": "^5.4.0"
+	},
+	"allowScripts": {
+		"esbuild@0.21.5": true
+	}
+}

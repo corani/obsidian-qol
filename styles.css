@@ -1,0 +1,193 @@
+/* ── ol-block card (shared by One Line and Birthdays) ─────────────────────── */
+
+.ol-block {
+	padding: var(--size-4-2) var(--size-4-3) 0;
+	margin: var(--size-4-2) 0;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	background: var(--background-primary);
+}
+
+.theme-dark .ol-block {
+	background: var(--background-secondary);
+}
+
+.ol-block__header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: var(--size-4-2);
+	padding-bottom: var(--size-4-2);
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.ol-block__title {
+	font-weight: var(--font-semibold);
+	font-size: var(--font-ui-medium);
+	color: var(--text-normal);
+}
+
+.ol-block__content {
+	font-size: var(--font-ui-small);
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-3);
+}
+
+.ol-block__content > p {
+	margin: 0;
+}
+
+.ol-block__empty {
+	color: var(--text-muted);
+	font-style: italic;
+	text-align: center;
+	padding: var(--size-4-3);
+}
+
+.ol-block--error {
+	border-color: var(--color-red);
+	background: var(--background-modifier-error);
+}
+
+.ol-block__error {
+	color: var(--color-red);
+}
+
+/* ── One Line ─────────────────────────────────────────────────────────────── */
+
+.ol-block__entry-date {
+	display: block;
+	font-weight: var(--font-semibold);
+	color: var(--text-accent);
+	margin-bottom: var(--size-4-1);
+	text-decoration: none;
+}
+
+.ol-block__entry-date:hover {
+	text-decoration: underline;
+}
+
+.ol-block__entry-body {
+	color: var(--text-normal);
+}
+
+.ol-block__entry-body > p {
+	margin: 0;
+}
+
+.ol-block__entry-body > p:last-child {
+	margin-bottom: var(--size-4-1);
+}
+
+/* ── Birthdays ────────────────────────────────────────────────────────────── */
+
+.birthdays-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: var(--font-ui-small);
+	margin: 0 !important;
+}
+
+.birthdays-table th {
+	text-align: left;
+	font-weight: var(--font-semibold);
+	color: var(--text-muted);
+	padding: var(--size-4-1) var(--size-4-2);
+	border: none;
+	border-bottom: 1px solid var(--background-modifier-border) !important;
+}
+
+.birthdays-table td {
+	padding: var(--size-4-1) var(--size-4-2);
+	color: var(--text-normal);
+	border: none !important;
+}
+
+.birthdays-table tbody tr:last-child td {
+	padding-bottom: var(--size-4-2);
+}
+
+.birthdays-table tbody tr:hover td {
+	background: var(--background-modifier-hover);
+}
+
+.birthdays-table td:last-child {
+	color: var(--text-muted);
+}
+
+/* ── Modified ────────────────────────────────────────────────────────────── */
+
+.modified-empty {
+	color: var(--text-muted);
+	font-style: italic;
+}
+
+.callout-content ul {
+	margin: 0 !important;
+	padding-top: var(--size-4-1) !important;
+	padding-bottom: 0 !important;
+}
+
+.callout + .callout {
+	margin-top: var(--size-4-3) !important;
+}
+
+/* ── Links ───────────────────────────────────────────────────────────────── */
+
+.links-footer {
+	margin-top: 0;
+	padding-bottom: var(--size-4-6);
+}
+
+.links-footer h2 {
+	margin-top: var(--size-4-3);
+	margin-bottom: var(--size-4-3);
+}
+
+.cm-sizer:has(.links-footer) .cm-content {
+	padding-bottom: 0 !important;
+}
+
+.cm-sizer:has(.links-footer) .embedded-backlinks,
+.markdown-preview-section:has(.links-footer) .embedded-backlinks {
+	display: none !important;
+}
+
+/* ── Settings ────────────────────────────────────────────────────────────── */
+
+.qol-section-heading {
+	margin-top: var(--size-4-6);
+	margin-bottom: var(--size-4-2);
+	font-size: var(--font-ui-medium);
+	color: var(--text-normal);
+	padding-bottom: var(--size-4-2);
+}
+
+.qol-section-card {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	margin-bottom: var(--size-4-4);
+	overflow: hidden;
+	background: var(--background-secondary);
+}
+
+.qol-section-card .setting-item {
+	border-top: 1px solid var(--background-modifier-border);
+	border-bottom: none;
+	border-left: none;
+	border-right: none;
+	border-radius: 0;
+	background: transparent;
+	padding: var(--size-4-3) var(--size-4-4);
+}
+
+.qol-section-card .setting-item:first-child {
+	border-top: none;
+}
+
+/* Title sub-settings: indented and no separator from their toggle */
+.qol-title-sub {
+	padding-left: calc(var(--size-4-4) + var(--size-4-6)) !important;
+	border-top: none !important;
+}
