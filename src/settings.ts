@@ -73,6 +73,16 @@ export const DEFAULT_LINKS_SETTINGS: LinksSettings = {
 	refreshInterval: 500,
 };
 
+// ── Utilities ─────────────────────────────────────────────────────────────────
+
+export interface UtilitiesSettings {
+	timestampFormat: string;
+}
+
+export const DEFAULT_UTILITIES_SETTINGS: UtilitiesSettings = {
+	timestampFormat: "YYYY-MM-DD HH:mm",
+};
+
 // ── Combined ──────────────────────────────────────────────────────────────────
 
 export interface QolSettings {
@@ -80,6 +90,7 @@ export interface QolSettings {
 	birthdays: BirthdaysSettings;
 	modified: ModifiedSettings;
 	links: LinksSettings;
+	utilities: UtilitiesSettings;
 }
 
 export const DEFAULT_SETTINGS: QolSettings = {
@@ -87,6 +98,7 @@ export const DEFAULT_SETTINGS: QolSettings = {
 	birthdays: DEFAULT_BIRTHDAYS_SETTINGS,
 	modified: DEFAULT_MODIFIED_SETTINGS,
 	links: DEFAULT_LINKS_SETTINGS,
+	utilities: DEFAULT_UTILITIES_SETTINGS,
 };
 
 // ── Settings Tab ──────────────────────────────────────────────────────────────
@@ -104,6 +116,7 @@ export class QolSettingTab extends PluginSettingTab {
 		this.addBirthdaysSection(containerEl);
 		this.addModifiedSection(containerEl);
 		this.addLinksSection(containerEl);
+		this.addUtilitiesSection(containerEl);
 	}
 
 	private heading(containerEl: HTMLElement, text: string) {
@@ -329,5 +342,23 @@ export class QolSettingTab extends PluginSettingTab {
 				s.refreshInterval = isNaN(n) || n < 0 ? DEFAULT_LINKS_SETTINGS.refreshInterval : n; await save();
 			}));
 		this.vis(intervalSetting, disabled);
+	}
+
+	private addUtilitiesSection(containerEl: HTMLElement) {
+		this.heading(containerEl, "Utilities");
+		const card = this.card(containerEl);
+		const s = this.plugin.settings.utilities;
+		const save = () => this.plugin.saveSettings();
+
+		new Setting(card)
+			.setName("Timestamp format")
+			.setDesc("Format for the `updated` frontmatter field. Tokens: YYYY MM DD HH mm ss.")
+			.addText(t => t
+				.setPlaceholder(DEFAULT_UTILITIES_SETTINGS.timestampFormat)
+				.setValue(s.timestampFormat)
+				.onChange(async v => {
+					s.timestampFormat = v || DEFAULT_UTILITIES_SETTINGS.timestampFormat;
+					await save();
+				}));
 	}
 }

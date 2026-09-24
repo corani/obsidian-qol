@@ -24,6 +24,17 @@ export default class QolPlugin extends Plugin {
 
 		this.registerLinksEvents();
 		this.app.workspace.onLayoutReady(() => this.scheduleLinksUpdate());
+
+		this.addCommand({
+			id: "update-timestamp",
+			name: "Update timestamp",
+			callback: () => {
+				const file = this.app.workspace.getActiveFile();
+				if (!file) return;
+				const ts = this.formatTimestamp(this.settings.utilities.timestampFormat);
+				this.app.fileManager.processFrontMatter(file, fm => { fm.updated = ts; });
+			},
+		});
 	}
 
 	onunload() {
@@ -39,6 +50,18 @@ export default class QolPlugin extends Plugin {
 			if (leaf.view instanceof MarkdownView) removeFromView(leaf.view);
 		});
 		this.scheduleLinksUpdate();
+	}
+
+	private formatTimestamp(format: string): string {
+		const now = new Date();
+		const pad = (n: number) => String(n).padStart(2, "0");
+		return format
+			.replace("YYYY", String(now.getFullYear()))
+			.replace("MM",   pad(now.getMonth() + 1))
+			.replace("DD",   pad(now.getDate()))
+			.replace("HH",   pad(now.getHours()))
+			.replace("mm",   pad(now.getMinutes()))
+			.replace("ss",   pad(now.getSeconds()));
 	}
 
 	private registerLinksEvents() {
@@ -69,10 +92,11 @@ export default class QolPlugin extends Plugin {
 	async loadSettings() {
 		const saved = await this.loadData();
 		this.settings = {
-			oneline: Object.assign({}, DEFAULT_SETTINGS.oneline, saved?.oneline),
-			birthdays: Object.assign({}, DEFAULT_SETTINGS.birthdays, saved?.birthdays),
-			modified: Object.assign({}, DEFAULT_SETTINGS.modified, saved?.modified),
-			links: Object.assign({}, DEFAULT_SETTINGS.links, saved?.links),
+			oneline:    Object.assign({}, DEFAULT_SETTINGS.oneline,    saved?.oneline),
+			birthdays:  Object.assign({}, DEFAULT_SETTINGS.birthdays,  saved?.birthdays),
+			modified:   Object.assign({}, DEFAULT_SETTINGS.modified,   saved?.modified),
+			links:      Object.assign({}, DEFAULT_SETTINGS.links,      saved?.links),
+			utilities:  Object.assign({}, DEFAULT_SETTINGS.utilities,  saved?.utilities),
 		};
 	}
 
