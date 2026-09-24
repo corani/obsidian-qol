@@ -1,7 +1,7 @@
 {
   "id": "obsidian-qol",
   "name": "Quality of Life",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "minAppVersion": "1.4.0",
   "description": "One Line journal entries, birthdays, created/modified notes, and backlinks/outlinks in a single plugin.",
   "author": "Daniel Bos",
