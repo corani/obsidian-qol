@@ -32,7 +32,7 @@ function buildMarkdown(settings: LinksSettings, backlinks: ResolvedLink[], outli
 		if (links.length === 0) return;
 		const { shown, hidden } = applyLimit(links, limit);
 		lines.push(`> [!${type}]- ${label} (${links.length})`);
-		for (const l of shown) lines.push(`> - [[${l.file.path}|${l.displayTitle}]]`);
+		for (const l of shown) lines.push(`> - [[${l.file.path.replace(/\.md$/, "")}|${l.displayTitle}]]`);
 		if (hidden > 0) lines.push(`> - *… and ${hidden} more*`);
 		lines.push("");
 	};
@@ -79,6 +79,15 @@ export async function updateView(app: App, view: MarkdownView, settings: LinksSe
 		container.appendChild(footerEl);
 
 		await MarkdownRenderer.render(app, markdown, footerEl, file.path, owner);
+
+		// Wire up internal link clicks -- MarkdownRenderer doesn't do this outside a leaf context
+		footerEl.querySelectorAll("a.internal-link").forEach(el => {
+			el.addEventListener("click", (evt) => {
+				evt.preventDefault();
+				const href = el.getAttribute("data-href") ?? el.getAttribute("href");
+				if (href) app.workspace.openLinkText(href, file.path, false);
+			});
+		});
 	} finally {
 		rendering.set(view, false);
 	}
