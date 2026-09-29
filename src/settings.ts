@@ -73,6 +73,18 @@ export const DEFAULT_LINKS_SETTINGS: LinksSettings = {
 	refreshInterval: 500,
 };
 
+// ── Quick Capture ─────────────────────────────────────────────────────────────
+
+export interface QuickCaptureSettings {
+	todoSection: string;
+	notesSection: string;
+}
+
+export const DEFAULT_CAPTURE_SETTINGS: QuickCaptureSettings = {
+	todoSection: "Todo",
+	notesSection: "Notes",
+};
+
 // ── Utilities ─────────────────────────────────────────────────────────────────
 
 export interface UtilitiesSettings {
@@ -90,6 +102,7 @@ export interface QolSettings {
 	birthdays: BirthdaysSettings;
 	modified: ModifiedSettings;
 	links: LinksSettings;
+	capture: QuickCaptureSettings;
 	utilities: UtilitiesSettings;
 }
 
@@ -98,6 +111,7 @@ export const DEFAULT_SETTINGS: QolSettings = {
 	birthdays: DEFAULT_BIRTHDAYS_SETTINGS,
 	modified: DEFAULT_MODIFIED_SETTINGS,
 	links: DEFAULT_LINKS_SETTINGS,
+	capture: DEFAULT_CAPTURE_SETTINGS,
 	utilities: DEFAULT_UTILITIES_SETTINGS,
 };
 
@@ -116,6 +130,7 @@ export class QolSettingTab extends PluginSettingTab {
 		this.addBirthdaysSection(containerEl);
 		this.addModifiedSection(containerEl);
 		this.addLinksSection(containerEl);
+		this.addCaptureSection(containerEl);
 		this.addUtilitiesSection(containerEl);
 	}
 
@@ -342,6 +357,27 @@ export class QolSettingTab extends PluginSettingTab {
 				s.refreshInterval = isNaN(n) || n < 0 ? DEFAULT_LINKS_SETTINGS.refreshInterval : n; await save();
 			}));
 		this.vis(intervalSetting, disabled);
+	}
+
+	private addCaptureSection(containerEl: HTMLElement) {
+		this.heading(containerEl, "Quick Capture");
+		const card = this.card(containerEl);
+		const s = this.plugin.settings.capture;
+		const save = () => this.plugin.saveSettings();
+
+		new Setting(card)
+			.setName("Todo section")
+			.setDesc("Heading to append todo items to (t / x / - / > < /).")
+			.addText(t => t.setPlaceholder(DEFAULT_CAPTURE_SETTINGS.todoSection).setValue(s.todoSection).onChange(async v => {
+				s.todoSection = v || DEFAULT_CAPTURE_SETTINGS.todoSection; await save();
+			}));
+
+		new Setting(card)
+			.setName("Notes section")
+			.setDesc("Heading to append note items to (? ! * \" i and others).")
+			.addText(t => t.setPlaceholder(DEFAULT_CAPTURE_SETTINGS.notesSection).setValue(s.notesSection).onChange(async v => {
+				s.notesSection = v || DEFAULT_CAPTURE_SETTINGS.notesSection; await save();
+			}));
 	}
 
 	private addUtilitiesSection(containerEl: HTMLElement) {

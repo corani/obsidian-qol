@@ -4,6 +4,8 @@ import { OneLineBlock } from "./oneline/renderer";
 import { BirthdaysBlock } from "./birthdays/renderer";
 import { ModifiedBlock } from "./modified/renderer";
 import { updateView, removeFromView } from "./links/renderer";
+import { QuickCaptureModal, isOneLine, isTodo } from "./capture/modal";
+import { getOrCreateDailyNote, appendToSection } from "./capture/inserter";
 
 export default class QolPlugin extends Plugin {
 	settings: QolSettings = DEFAULT_SETTINGS;
@@ -33,6 +35,23 @@ export default class QolPlugin extends Plugin {
 				if (!file) return;
 				const ts = this.formatTimestamp(this.settings.utilities.timestampFormat);
 				this.app.fileManager.processFrontMatter(file, fm => { fm.updated = ts; });
+			},
+		});
+
+		this.addCommand({
+			id: "quick-capture",
+			name: "Quick capture to daily note",
+			callback: () => {
+				new QuickCaptureModal(this.app, this.settings.capture, async (storedChar, text, date) => {
+					const file = await getOrCreateDailyNote(this.app, date);
+					if (!file) return;
+					const oneLine = isOneLine(storedChar);
+					const section = oneLine  ? this.settings.oneline.defaultSection
+					               : isTodo(storedChar) ? this.settings.capture.todoSection
+					               :                      this.settings.capture.notesSection;
+					const line = oneLine ? text : `- [${storedChar}] ${text}`;
+					await appendToSection(this.app, file, section, line, oneLine);
+				}).open();
 			},
 		});
 	}
@@ -96,6 +115,7 @@ export default class QolPlugin extends Plugin {
 			birthdays:  Object.assign({}, DEFAULT_SETTINGS.birthdays,  saved?.birthdays),
 			modified:   Object.assign({}, DEFAULT_SETTINGS.modified,   saved?.modified),
 			links:      Object.assign({}, DEFAULT_SETTINGS.links,      saved?.links),
+			capture:    Object.assign({}, DEFAULT_SETTINGS.capture,    saved?.capture),
 			utilities:  Object.assign({}, DEFAULT_SETTINGS.utilities,  saved?.utilities),
 		};
 	}

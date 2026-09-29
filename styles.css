@@ -191,3 +191,69 @@
 	padding-left: calc(var(--size-4-4) + var(--size-4-6)) !important;
 	border-top: none !important;
 }
+
+/* ── Quick Capture modal ────────────────────────────────────────────────── */
+.qol-capture-input-row {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--size-4-2);
+	margin-bottom: var(--size-4-3);
+}
+
+.qol-capture-preview {
+	flex-shrink: 0;
+	width: 2em;
+	min-height: 1.5em;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding-top: 0.3em;
+}
+
+/* Hide the empty list item text that MarkdownRenderer adds */
+.qol-capture-preview ul {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.qol-capture-preview li {
+	margin: 0;
+	padding: 0;
+}
+
+.qol-capture-oneline-icon {
+	font-size: var(--font-ui-medium);
+	color: var(--text-muted);
+}
+
+.qol-capture-textarea {
+	flex: 1;
+	min-height: 4em;
+	resize: vertical;
+	font-family: var(--font-interface);
+	font-size: var(--font-ui-medium);
+}
+
+.qol-capture-date-row {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	margin-bottom: var(--size-4-4);
+}
+
+.qol-capture-date-row label {
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	white-space: nowrap;
+}
+
+.qol-capture-date-row input[type="date"] {
+	flex: 1;
+}
+
+.qol-capture-buttons {
+	display: flex;
+	justify-content: flex-end;
+	gap: var(--size-4-2);
+}
