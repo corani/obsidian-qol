@@ -70,15 +70,15 @@ export function resolveAnchorDate(app: App, contextPath: string, config: BlockCo
 		if (d) return d;
 	}
 
-	// 2. Context note frontmatter: created then date
+	// 2. Context note frontmatter: subject date, then creation date
 	const file = app.vault.getFileByPath(contextPath);
 	if (file) {
 		const fm = app.metadataCache.getFileCache(file)?.frontmatter;
 		if (fm) {
-			const fromCreated = parseFrontmatterDate(fm.created);
-			if (fromCreated) return fromCreated;
 			const fromDate = parseFrontmatterDate(fm.date);
 			if (fromDate) return fromDate;
+			const fromCreated = parseFrontmatterDate(fm.created);
+			if (fromCreated) return fromCreated;
 		}
 	}
 

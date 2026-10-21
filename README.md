@@ -52,6 +52,14 @@ showtitle: false          # hide title heading for this block
 ```
 ````
 
+The reporting period is anchored to the block's `date` override, then the containing
+note's `date` frontmatter (its subject date), then its `created` frontmatter, and finally
+its daily, weekly, or monthly filename. Dates are compared in local time.
+
+Individual notes use `created` and `updated` frontmatter for their timestamps, falling
+back to filesystem creation and modification times respectively. Notes created in the
+period appear only in **Created**, not again in **Modified**.
+
 ### Links
 
 Automatically appends a **Links** section to the bottom of every note with collapsed
