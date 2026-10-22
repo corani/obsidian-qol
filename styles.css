@@ -193,6 +193,11 @@
 }
 
 /* ── Quick Capture modal ────────────────────────────────────────────────── */
+.qol-capture-modal {
+	width: min(720px, 90vw);
+	max-height: 90vh;
+}
+
 .qol-capture-input-row {
 	display: flex;
 	align-items: flex-start;
@@ -227,12 +232,43 @@
 	color: var(--text-muted);
 }
 
-.qol-capture-textarea {
+.qol-capture-editor {
 	flex: 1;
-	min-height: 4em;
-	resize: vertical;
-	font-family: var(--font-interface);
-	font-size: var(--font-ui-medium);
+	min-width: 0;
+	height: clamp(150px, 20vh, 220px);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	background: var(--background-primary);
+}
+
+.qol-capture-editor .view-header,
+.qol-capture-editor .inline-title,
+.qol-capture-editor .metadata-container,
+.qol-capture-editor .embedded-backlinks {
+	display: none;
+}
+
+.qol-capture-editor .view-content {
+	padding: 0;
+}
+
+.qol-capture-editor .cm-scroller {
+	padding: var(--size-4-3);
+}
+
+.qol-capture-editor .cm-sizer {
+	min-height: 100%;
+	padding-bottom: 0 !important;
+}
+
+.qol-capture-help {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	gap: var(--size-4-2);
+	margin-bottom: var(--size-4-3);
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
 }
 
 .qol-capture-date-row {

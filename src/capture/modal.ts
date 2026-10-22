@@ -1,5 +1,6 @@
-import { App, Modal, MarkdownRenderer, Component } from "obsidian";
+import { App, Modal, MarkdownRenderer, Component, Notice } from "obsidian";
 import type { QuickCaptureSettings } from "../settings";
+import { CaptureEditor } from "./editor";
 
 // ── Prefix tables ─────────────────────────────────────────────────────────────
 
@@ -66,10 +67,13 @@ export class ConfirmModal extends Modal {
 
 export class QuickCaptureModal extends Modal {
 	private previewEl!: HTMLElement;
-	private textarea!: HTMLTextAreaElement;
+	private captureEditor: CaptureEditor | null = null;
 	private dateInput!: HTMLInputElement;
 	private previewComponent!: Component;
+	private addButton!: HTMLButtonElement;
+	private submitting = false;
 	private debounceTimer: ReturnType<typeof setTimeout> | null = null;
+	private focusTimer: number | null = null;
 
 	constructor(
 		app: App,
@@ -79,8 +83,9 @@ export class QuickCaptureModal extends Modal {
 		super(app);
 	}
 
-	onOpen() {
+	async onOpen() {
 		const { contentEl } = this;
+		this.modalEl.addClass("qol-capture-modal");
 		this.titleEl.setText("Quick Capture");
 
 		this.previewComponent = new Component();
@@ -91,16 +96,22 @@ export class QuickCaptureModal extends Modal {
 
 		this.previewEl = inputRow.createDiv({ cls: "qol-capture-preview" });
 
-		this.textarea = inputRow.createEl("textarea", { cls: "qol-capture-textarea" });
-		this.textarea.rows = 3;
-		this.textarea.placeholder = "i <note text>  or  t <todo text>  or  1 <one-line>";
-		this.textarea.addEventListener("input", () => this.schedulePreviewUpdate());
-		this.textarea.addEventListener("keydown", (e: KeyboardEvent) => {
-			if (e.key === "Enter" && e.ctrlKey) {
+		inputRow.addEventListener("keydown", (e: KeyboardEvent) => {
+			if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && !e.isComposing) {
 				e.preventDefault();
-				this.submit();
+				e.stopPropagation();
+				void this.submit();
 			}
-		});
+		}, true);
+		const help = contentEl.createDiv({ cls: "qol-capture-help" });
+		const prefixes = help.createEl("span");
+		for (const [prefix, label] of [["i", " note · "], ["t", " task · "], ["1", " one-line"]]) {
+			prefixes.createEl("code", { text: prefix });
+			prefixes.createEl("span", { text: label });
+		}
+		const shortcut = help.createEl("span");
+		shortcut.createEl("kbd", { text: "Ctrl/Cmd+Enter" });
+		shortcut.createEl("span", { text: " to add" });
 
 		// ── Date row ─────────────────────────────────────────────────────────
 		const dateRow = contentEl.createDiv({ cls: "qol-capture-date-row" });
@@ -113,17 +124,38 @@ export class QuickCaptureModal extends Modal {
 		// ── Button row ───────────────────────────────────────────────────────
 		const btns = contentEl.createDiv({ cls: "qol-capture-buttons" });
 		btns.createEl("button", { text: "Cancel" }).addEventListener("click", () => this.close());
-		const addBtn = btns.createEl("button", { text: "Add", cls: "mod-cta" });
-		addBtn.addEventListener("click", () => this.submit());
+		this.addButton = btns.createEl("button", { text: "Add", cls: "mod-cta" });
+		this.addButton.disabled = true;
+		this.addButton.addEventListener("click", () => { void this.submit(); });
 
-		this.renderPreview("i");
-		// Defer focus so Modal's own focus management doesn't steal it back
-		activeWindow.setTimeout(() => this.textarea.focus(), 0);
+		void this.renderPreview("i");
+		try {
+			const leaf = this.app.workspace.getMostRecentLeaf() ?? this.app.workspace.getLeaf(false);
+			const editor = new CaptureEditor(leaf, () => this.schedulePreviewUpdate());
+			this.captureEditor = editor;
+			inputRow.appendChild(editor.containerEl);
+			editor.load();
+			await editor.setState({ mode: "source", source: false }, { history: false });
+			if (this.captureEditor !== editor) return;
+			editor.setViewData("", true);
+			this.addButton.disabled = false;
+			this.focusTimer = activeWindow.setTimeout(() => {
+				this.focusTimer = null;
+				this.captureEditor?.editor.focus();
+			}, 0);
+		} catch (error) {
+			console.error("QOL: Could not open capture editor", error);
+			new Notice(`Could not open capture editor: ${error instanceof Error ? error.message : String(error)}`);
+			this.close();
+		}
 	}
 
 	onClose() {
 		if (this.debounceTimer) clearTimeout(this.debounceTimer);
-		this.previewComponent.unload();
+		if (this.focusTimer !== null) activeWindow.clearTimeout(this.focusTimer);
+		this.captureEditor?.unload();
+		this.captureEditor = null;
+		this.previewComponent?.unload();
 		this.contentEl.empty();
 	}
 
@@ -136,8 +168,9 @@ export class QuickCaptureModal extends Modal {
 	private schedulePreviewUpdate() {
 		if (this.debounceTimer) clearTimeout(this.debounceTimer);
 		this.debounceTimer = setTimeout(() => {
-			const { storedChar } = parseInput(this.textarea.value);
-			this.renderPreview(storedChar);
+			if (!this.captureEditor) return;
+			const { storedChar } = parseInput(this.captureEditor.editor.getValue());
+			void this.renderPreview(storedChar);
 		}, 100);
 	}
 
@@ -170,13 +203,24 @@ export class QuickCaptureModal extends Modal {
 	}
 
 	private async submit() {
-		const raw = this.textarea.value.trim();
+		if (!this.captureEditor || this.submitting || this.addButton.disabled) return;
+		const raw = this.captureEditor.editor.getValue().trim();
 		if (!raw) return;
 
 		const { storedChar, text } = parseInput(raw);
 		if (!text.trim()) return;
 
-		await this.onSubmit(storedChar, text, this.dateInput.value || this.todayStr());
-		this.close();
+		this.submitting = true;
+		this.addButton.disabled = true;
+		try {
+			await this.onSubmit(storedChar, text, this.dateInput.value || this.todayStr());
+			this.close();
+		} catch (error) {
+			console.error("QOL: Could not save capture", error);
+			new Notice(`Could not save capture: ${error instanceof Error ? error.message : String(error)}`);
+		} finally {
+			this.submitting = false;
+			this.addButton.disabled = false;
+		}
 	}
 }
