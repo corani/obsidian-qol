@@ -73,6 +73,9 @@ title and tab icons can also be switched off. These features are enabled by defa
 Wiki links (including aliases, heading/block references, and relative paths) resolve
 through Obsidian's metadata cache. Markdown-style internal links are supported too.
 Editor decorations skip code, comments, and embeds.
+Links in the Properties/frontmatter panel and dynamically rendered blocks (including
+birthday results) also show stickers, following the current editor/Reading-view
+visibility setting. Editable property text is left untouched.
 
 External links get fixed, non-editable icons: a globe for web links, an envelope for
 email, a phone for telephone links, and folder/file-type icons for `file://` and network

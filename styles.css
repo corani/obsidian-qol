@@ -284,6 +284,10 @@
 	font-size: 1em;
 }
 
+.qol-link-sticker.qol-emoji-sticker {
+	vertical-align: baseline;
+}
+
 .qol-external-sticker {
 	display: inline-flex;
 	vertical-align: text-bottom;
@@ -295,11 +299,22 @@
 	height: 1em;
 }
 
+.qol-title-row {
+	display: flex;
+	align-items: baseline;
+	gap: var(--size-4-2);
+	margin-block-end: var(--inline-title-margin-bottom);
+}
+
+.qol-title-row > .inline-title {
+	flex: 1;
+	min-width: 0;
+	margin-block-end: 0;
+}
+
 .qol-title-sticker {
-	float: left;
-	font-size: var(--inline-title-size);
-	margin-inline-end: var(--size-4-2);
-	margin-top: 0.15em;
+	flex-shrink: 0;
+	font-size: calc(var(--inline-title-size) * 1.25);
 }
 
 .qol-tab-has-sticker > :not(.qol-tab-sticker) {

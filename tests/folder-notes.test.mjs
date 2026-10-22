@@ -64,6 +64,125 @@ function fixture(initialNotes) {
 	return { manager: new StickerManager({ app }), app, notes, writes };
 }
 
+function linkFixture(mode = "source") {
+	const settings = { enabled: true, editor: true, reading: true };
+	const manager = new StickerManager({ settings: { stickers: settings } });
+	const resolutions = [];
+	const stickers = new Map([["People/A.md", "1f4dd"], ["People/B.md", "1f9e0"]]);
+	manager.resolveLink = (href, source) => {
+		resolutions.push([href, source]);
+		return stickers.has(href) ? { path: href } : null;
+	};
+	manager.rawSticker = file => stickers.get(file.path) ?? null;
+	manager.createSticker = (_document, path, raw) => ({ path, raw });
+	manager.createExternalSticker = (_document, icon) => ({ icon });
+	const document = { querySelectorAll: () => [] };
+	const links = [];
+	const root = {
+		ownerDocument: document,
+		querySelectorAll: () => links,
+		matches: () => false,
+		closest: () => null,
+		contains: () => true,
+	};
+	const view = { file: { path: "Journal/Today.md" }, containerEl: root, getMode: () => mode };
+	const link = (href, { external = false, editable = false, embedded = false } = {}) => {
+		const children = [];
+		const element = {
+			dataset: {},
+			ownerDocument: document,
+			isContentEditable: editable,
+			classList: { contains: name => external && name === "external-link" },
+			getAttribute: name => name === "data-href" || name === "href" ? element.href : null,
+			href,
+			matches: () => true,
+			closest: selector => embedded && selector === ".internal-embed" ? root : null,
+			querySelectorAll: selector => selector === ".qol-link-sticker" ? [...children] : [],
+			prepend(child) {
+				child.remove = () => children.splice(children.indexOf(child), 1);
+				children.unshift(child);
+			},
+			children,
+		};
+		return element;
+	};
+	return { manager, settings, stickers, resolutions, root, view, links, link };
+}
+
+test("decorates non-anchor property links and preserves embedded resolution context without duplicates", () => {
+	const { manager, root, view, links, link, resolutions, stickers } = linkFixture();
+	const property = link("People/A.md");
+	const embedded = link("People/B.md", { embedded: true });
+	embedded.dataset.qolSource = "Embeds/Other.md";
+	links.push(property, embedded);
+	manager.decorateViewLinks(root, view);
+	assert.equal(property.children[0].raw, "1f4dd");
+	assert.deepEqual(resolutions, [["People/A.md", "Journal/Today.md"], ["People/B.md", "Embeds/Other.md"]]);
+	const original = property.children[0];
+	manager.decorateViewLinks(root, view);
+	assert.equal(property.children.length, 1);
+	assert.equal(property.children[0], original);
+	stickers.set("People/A.md", "1f4d6");
+	manager.decorateViewLinks(root, view);
+	assert.equal(property.children[0].raw, "1f4d6");
+});
+
+test("rendered links follow editor/reading settings and do not decorate editable property text", () => {
+	const { manager, settings, root, view, links, link } = linkFixture();
+	const property = link("People/A.md");
+	const editable = link("People/B.md", { editable: true });
+	links.push(property, editable);
+	settings.editor = false;
+	manager.decorateViewLinks(root, view);
+	assert.equal(property.children.length, 0);
+	manager.decorateReading(root, view.file.path);
+	assert.equal(property.children.length, 1);
+	assert.equal(editable.children.length, 0);
+	settings.reading = false;
+	manager.decorateReading(root, view.file.path);
+	assert.equal(property.children.length, 0);
+	settings.editor = true;
+	manager.decorateViewLinks(root, view);
+	assert.equal(property.children.length, 1);
+	settings.enabled = false;
+	manager.decorateViewLinks(root, view);
+	assert.equal(property.children.length, 0);
+});
+
+test("observes late block links and changed property targets, then disconnects on unload", () => {
+	const previous = globalThis.MutationObserver;
+	const observers = [];
+	globalThis.MutationObserver = class {
+		constructor(callback) { this.callback = callback; observers.push(this); }
+		observe(root, options) { this.root = root; this.options = options; }
+		disconnect() { this.disconnected = true; }
+	};
+	try {
+		const { manager, view, link } = linkFixture();
+		manager.observeView(view);
+		manager.observeView(view);
+		assert.equal(observers.length, 1);
+		const observer = observers[0];
+		const birthday = link("People/A.md");
+		birthday.nodeType = 1;
+		observer.callback([{ type: "childList", addedNodes: [birthday] }]);
+		assert.equal(birthday.children[0].path, "People/A.md");
+		birthday.href = "People/B.md";
+		observer.callback([{ type: "attributes", target: birthday, addedNodes: [] }]);
+		assert.equal(birthday.children.length, 1);
+		assert.equal(birthday.children[0].path, "People/B.md");
+		const external = link("https://example.com", { external: true });
+		external.nodeType = 1;
+		observer.callback([{ type: "childList", addedNodes: [external] }]);
+		assert.equal(external.children[0].icon, "globe");
+		manager.onunload();
+		assert.equal(observer.disconnected, true);
+	} finally {
+		if (previous === undefined) delete globalThis.MutationObserver;
+		else globalThis.MutationObserver = previous;
+	}
+});
+
 test("reordering writes only the parent note and preserves stickers, hidden entries and unrelated properties", async () => {
 	const { manager, notes, writes } = fixture([
 		["Vault.md", { "qol-nav-sort": ["Hidden", "Brain"], tags: ["moc"], sticker: "1f4dd" }],
