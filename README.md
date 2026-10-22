@@ -65,6 +65,16 @@ period appear only in **Created**, not again in **Modified**.
 Automatically appends a **Links** section to the bottom of every note with collapsed
 callouts for backlinks and outlinks. No syntax required. Can be disabled in settings.
 
+### Quick Capture
+
+Use **Quality of Life: Quick capture to daily note** to write a draft in a larger
+native Obsidian Markdown editor, including `[[` link completion and Live Preview.
+Start with `i ` for a note, `t ` for a task, or `1 ` for a One Line entry; the existing
+capture prefixes are supported. Choose the destination date, then click **Add** or
+press **Ctrl/Cmd+Enter**. Plain Enter inserts a new line or accepts an autocomplete
+suggestion. The draft stays in memory until submitted; Cancel does not create or
+change a note.
+
 ### Stickers
 
 Shows a note's `sticker` frontmatter on internal links, beside its inline title, and in
