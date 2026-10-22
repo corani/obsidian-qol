@@ -95,6 +95,34 @@ export const DEFAULT_UTILITIES_SETTINGS: UtilitiesSettings = {
 	timestampFormat: "YYYY-MM-DD HH:mm",
 };
 
+export interface StickerSettings {
+	enabled: boolean;
+	editor: boolean;
+	reading: boolean;
+	titles: boolean;
+	tabs: boolean;
+}
+
+export const DEFAULT_STICKER_SETTINGS: StickerSettings = {
+	enabled: true,
+	editor: true,
+	reading: true,
+	titles: true,
+	tabs: true,
+};
+
+export interface NavigatorSettings {
+	enabled: boolean;
+	hiddenPaths: string[];
+	expanded: string[];
+}
+
+export const DEFAULT_NAVIGATOR_SETTINGS: NavigatorSettings = {
+	enabled: true,
+	hiddenPaths: ["Spaces"],
+	expanded: [],
+};
+
 // ── Combined ──────────────────────────────────────────────────────────────────
 
 export interface QolSettings {
@@ -104,6 +132,8 @@ export interface QolSettings {
 	links: LinksSettings;
 	capture: QuickCaptureSettings;
 	utilities: UtilitiesSettings;
+	stickers: StickerSettings;
+	navigator: NavigatorSettings;
 }
 
 export const DEFAULT_SETTINGS: QolSettings = {
@@ -113,6 +143,8 @@ export const DEFAULT_SETTINGS: QolSettings = {
 	links: DEFAULT_LINKS_SETTINGS,
 	capture: DEFAULT_CAPTURE_SETTINGS,
 	utilities: DEFAULT_UTILITIES_SETTINGS,
+	stickers: DEFAULT_STICKER_SETTINGS,
+	navigator: DEFAULT_NAVIGATOR_SETTINGS,
 };
 
 // ── Settings Tab ──────────────────────────────────────────────────────────────
@@ -132,6 +164,8 @@ export class QolSettingTab extends PluginSettingTab {
 		this.addLinksSection(containerEl);
 		this.addCaptureSection(containerEl);
 		this.addUtilitiesSection(containerEl);
+		this.addStickersSection(containerEl);
+		this.addNavigatorSection(containerEl);
 	}
 
 	private heading(containerEl: HTMLElement, text: string) {
@@ -396,5 +430,46 @@ export class QolSettingTab extends PluginSettingTab {
 					s.timestampFormat = v || DEFAULT_UTILITIES_SETTINGS.timestampFormat;
 					await save();
 				}));
+	}
+
+	private addStickersSection(containerEl: HTMLElement) {
+		this.heading(containerEl, "Stickers");
+		const card = this.card(containerEl);
+		const settings = this.plugin.settings.stickers;
+		for (const [key, name, description] of [
+			["enabled", "Enable stickers", "Disable make.md's link stickers first to avoid duplicates."],
+			["editor", "Links in the editor", "Show stickers on internal links in Live Preview and Source mode."],
+			["reading", "Links in Reading view", "Show stickers on rendered internal links, including QOL blocks."],
+			["titles", "Note titles", "Show a clickable sticker beside the inline note title, or an add-sticker button when absent."],
+			["tabs", "Note tabs", "Replace the note tab icon with its sticker."],
+		] as const) {
+			new Setting(card).setName(name).setDesc(description).addToggle(toggle =>
+				toggle.setValue(settings[key]).onChange(async value => {
+					settings[key] = value;
+					await this.plugin.saveSettings();
+					this.plugin.stickers.refresh();
+				}));
+		}
+	}
+
+	private addNavigatorSection(containerEl: HTMLElement) {
+		this.heading(containerEl, "Navigator");
+		const card = this.card(containerEl);
+		const settings = this.plugin.settings.navigator;
+		new Setting(card).setName("Enable Navigator")
+			.setDesc("A folder and note tree. Order uses qol-nav-sort in the parent folder note, or Vault.md for the top level.")
+			.addToggle(toggle => toggle.setValue(settings.enabled).onChange(async value => {
+				settings.enabled = value;
+				await this.plugin.saveSettings();
+				if (value) await this.plugin.openNavigator();
+				else this.plugin.closeNavigator();
+			}));
+		new Setting(card).setName("Hidden paths")
+			.setDesc("Vault-relative files/folders, one per line. Hidden folders also hide their descendants.")
+			.addTextArea(text => text.setValue(settings.hiddenPaths.join("\n")).onChange(async value => {
+				settings.hiddenPaths = value.split("\n").map(path => path.trim().replace(/^\/|\/$/g, "")).filter(Boolean);
+				await this.plugin.saveSettings();
+				this.plugin.refreshNavigator();
+			}));
 	}
 }

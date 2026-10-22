@@ -1,4 +1,4 @@
-import { Plugin, MarkdownView } from "obsidian";
+import { Plugin, MarkdownView, Notice } from "obsidian";
 import { QolSettings, DEFAULT_SETTINGS, QolSettingTab } from "./settings";
 import { OneLineBlock } from "./oneline/renderer";
 import { BirthdaysBlock } from "./birthdays/renderer";
@@ -6,14 +6,40 @@ import { ModifiedBlock } from "./modified/renderer";
 import { updateView, removeFromView } from "./links/renderer";
 import { QuickCaptureModal, isOneLine, isTodo } from "./capture/modal";
 import { getOrCreateDailyNote, appendToSection } from "./capture/inserter";
+import { StickerManager } from "./stickers/manager";
+import { renamePath } from "./stickers/model";
+import { NAVIGATOR_TYPE, NavigatorView } from "./navigator/view";
 
 export default class QolPlugin extends Plugin {
 	settings: QolSettings = DEFAULT_SETTINGS;
+	stickers!: StickerManager;
 	private debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 	async onload() {
 		await this.loadSettings();
+		this.stickers = this.addChild(new StickerManager(this));
+		this.registerView(NAVIGATOR_TYPE, leaf => new NavigatorView(leaf, this));
 		this.addSettingTab(new QolSettingTab(this.app, this));
+		this.addCommand({ id: "open-navigator", name: "Open Navigator", callback: () => this.openNavigator() });
+		this.addRibbonIcon("folder-tree", "Open Navigator", () => { void this.openNavigator(); });
+		this.registerEvent(this.app.vault.on("create", () => this.stickers.scheduleRefresh()));
+		this.registerEvent(this.app.vault.on("rename", (file, oldPath) => {
+			void this.updateNavigatorPaths(oldPath, file.path)
+				.then(() => this.stickers.updateNavigationReference(oldPath, file.path))
+				.then(() => this.stickers.followFolderRename(file, oldPath))
+				.catch(error => this.reportError("Could not update Navigator after rename", error));
+			this.stickers.scheduleRefresh();
+		}));
+		this.registerEvent(this.app.vault.on("delete", file => {
+			void this.updateNavigatorPaths(file.path)
+				.then(() => this.stickers.updateNavigationReference(file.path))
+				.catch(error => this.reportError("Could not update Navigator paths", error));
+			this.stickers.scheduleRefresh();
+		}));
+		this.app.workspace.onLayoutReady(() => {
+			this.stickers.scheduleRefresh();
+			if (this.settings.navigator.enabled) void this.openNavigator();
+		});
 
 		this.registerMarkdownCodeBlockProcessor("oneline", (source, el, ctx) =>
 			ctx.addChild(new OneLineBlock(this.app, this.settings.oneline, source, el, ctx)));
@@ -57,6 +83,7 @@ export default class QolPlugin extends Plugin {
 	}
 
 	onunload() {
+		this.closeNavigator();
 		if (this.debounceTimer) clearTimeout(this.debounceTimer);
 		this.app.workspace.iterateAllLeaves(leaf => {
 			if (leaf.view instanceof MarkdownView) removeFromView(leaf.view);
@@ -117,10 +144,61 @@ export default class QolPlugin extends Plugin {
 			links:      Object.assign({}, DEFAULT_SETTINGS.links,      saved?.links),
 			capture:    Object.assign({}, DEFAULT_SETTINGS.capture,    saved?.capture),
 			utilities:  Object.assign({}, DEFAULT_SETTINGS.utilities,  saved?.utilities),
+			stickers: Object.assign({}, DEFAULT_SETTINGS.stickers, saved?.stickers),
+			navigator: Object.assign({}, DEFAULT_SETTINGS.navigator, saved?.navigator),
 		};
+		this.settings.navigator = {
+			enabled: this.settings.navigator.enabled,
+			hiddenPaths: this.settings.navigator.hiddenPaths,
+			expanded: this.settings.navigator.expanded,
+		};
+		this.settings.navigator.expanded = [...this.settings.navigator.expanded];
+		this.settings.navigator.hiddenPaths = [...this.settings.navigator.hiddenPaths];
 	}
 
 	async saveSettings() {
 		await this.saveData(this.settings);
+	}
+
+	async openNavigator(): Promise<void> {
+		try {
+			if (!this.settings.navigator.enabled) {
+				this.settings.navigator.enabled = true;
+				await this.saveSettings();
+			}
+			let leaf = this.app.workspace.getLeavesOfType(NAVIGATOR_TYPE)[0];
+			if (!leaf) {
+				const left = this.app.workspace.getLeftLeaf(false);
+				if (!left) throw new Error("No sidebar leaf is available.");
+				leaf = left;
+				await leaf.setViewState({ type: NAVIGATOR_TYPE, active: true });
+			}
+			await this.app.workspace.revealLeaf(leaf);
+		} catch (error) { this.reportError("Could not open Navigator", error); }
+	}
+
+	closeNavigator(): void {
+		this.app.workspace.getLeavesOfType(NAVIGATOR_TYPE).forEach(leaf => leaf.detach());
+	}
+
+	refreshNavigator(): void {
+		this.app.workspace.getLeavesOfType(NAVIGATOR_TYPE).forEach(leaf => {
+			if (leaf.view instanceof NavigatorView) leaf.view.refresh();
+		});
+	}
+
+	private async updateNavigatorPaths(oldPath: string, newPath?: string): Promise<void> {
+		const settings = this.settings.navigator;
+		const keep = (path: string) => path !== oldPath && !path.startsWith(`${oldPath}/`);
+		const update = (paths: string[]) => newPath
+			? paths.map(path => renamePath(path, oldPath, newPath)) : paths.filter(keep);
+		settings.expanded = update(settings.expanded);
+		settings.hiddenPaths = update(settings.hiddenPaths);
+		await this.saveSettings();
+	}
+
+	reportError(message: string, error: unknown): void {
+		console.error(`QOL: ${message}`, error);
+		new Notice(`${message}: ${error instanceof Error ? error.message : String(error)}`);
 	}
 }

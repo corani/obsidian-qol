@@ -257,3 +257,181 @@
 	justify-content: flex-end;
 	gap: var(--size-4-2);
 }
+
+/* ── Stickers and Navigator ─────────────────────────────────────────────── */
+
+.qol-sticker {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	vertical-align: text-bottom;
+	cursor: pointer;
+	line-height: 1;
+}
+
+.qol-sticker svg {
+	width: 1em;
+	height: 1em;
+}
+
+.qol-sticker:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	border-radius: var(--radius-s);
+}
+
+.qol-link-sticker {
+	margin-inline-end: 0.3em;
+	font-size: 1em;
+}
+
+.qol-external-sticker {
+	display: inline-flex;
+	vertical-align: text-bottom;
+	pointer-events: none;
+}
+
+.qol-external-sticker svg {
+	width: 1em;
+	height: 1em;
+}
+
+.qol-title-sticker {
+	float: left;
+	font-size: var(--inline-title-size);
+	margin-inline-end: var(--size-4-2);
+	margin-top: 0.15em;
+}
+
+.qol-tab-has-sticker > :not(.qol-tab-sticker) {
+	display: none;
+}
+
+.qol-tab-has-sticker {
+	display: flex !important;
+}
+
+.qol-tab-sticker {
+	font-size: var(--icon-size);
+}
+
+.qol-sticker-preview {
+	font-size: 2em;
+	min-height: 1.5em;
+	text-align: center;
+}
+
+.qol-sticker-options {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
+	gap: var(--size-4-1);
+	max-height: 240px;
+	overflow-y: auto;
+}
+
+.qol-sticker-options button {
+	padding: var(--size-4-1);
+	height: 36px;
+	font-size: 22px;
+}
+
+.qol-sticker-options svg {
+	width: 22px;
+	height: 22px;
+}
+
+.qol-navigator {
+	padding: var(--size-4-2) !important;
+	overflow: auto;
+}
+
+.qol-navigator-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-weight: var(--font-semibold);
+	padding-bottom: var(--size-4-2);
+}
+
+.qol-navigator-header button,
+.qol-nav-toggle {
+	background: transparent;
+	box-shadow: none;
+	border: none;
+	padding: 0;
+}
+
+.qol-nav-row {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-1);
+	min-height: 28px;
+	padding: 2px var(--size-4-1);
+	border-radius: var(--radius-s);
+	cursor: pointer;
+	font-size: var(--font-ui-small);
+}
+
+.qol-nav-drop-before::before,
+.qol-nav-drop-after::after {
+	content: "";
+	position: absolute;
+	inset-inline: 0;
+	height: 2px;
+	background: var(--interactive-accent);
+	pointer-events: none;
+	z-index: 1;
+}
+
+.qol-nav-drop-before::before {
+	top: -1px;
+}
+
+.qol-nav-drop-after::after {
+	bottom: -1px;
+}
+
+.qol-nav-row:hover,
+.qol-nav-row:focus-visible {
+	background: var(--background-modifier-hover);
+}
+
+.qol-nav-toggle,
+.qol-nav-icon {
+	width: 18px;
+	height: 18px;
+	min-width: 18px;
+	flex-shrink: 0;
+}
+
+.qol-navigator .qol-nav-toggle {
+	color: var(--text-faint);
+}
+
+.qol-navigator .qol-nav-toggle:hover {
+	color: var(--text-muted);
+}
+
+.qol-nav-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 16px;
+}
+
+.qol-nav-icon svg,
+.qol-nav-toggle svg {
+	width: 16px;
+	height: 16px;
+}
+
+.qol-nav-name {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.qol-nav-children {
+	margin-inline-start: 15px;
+	border-inline-start: 1px solid var(--background-modifier-border);
+}
