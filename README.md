@@ -1,7 +1,7 @@
 # obsidian-qol
 
-A single Obsidian plugin combining four quality-of-life features. Configure all of them
-from one settings pane.
+A single Obsidian plugin combining journal, note, and navigation quality-of-life features.
+Configure all of them from one settings pane.
 
 ## Features
 
@@ -65,6 +65,83 @@ period appear only in **Created**, not again in **Modified**.
 Automatically appends a **Links** section to the bottom of every note with collapsed
 callouts for backlinks and outlinks. No syntax required. Can be disabled in settings.
 
+### Stickers
+
+Shows a note's `sticker` frontmatter on internal links, beside its inline title, and in
+its tab. Editor links and Reading-view links have independent visibility toggles;
+title and tab icons can also be switched off. These features are enabled by default.
+Wiki links (including aliases, heading/block references, and relative paths) resolve
+through Obsidian's metadata cache. Markdown-style internal links are supported too.
+Editor decorations skip code, comments, and embeds.
+
+External links get fixed, non-editable icons: a globe for web links, an envelope for
+email, a phone for telephone links, and folder/file-type icons for `file://` and network
+file links (documents, images, audio, video, archives). Other URL schemes use an
+external-link icon. These follow the same editor/Reading-view visibility settings.
+
+Click a sticker to change or remove it. To add one, use **Quality of Life: Set/change
+note sticker**, the file's context menu, or the add-sticker button beside an undecorated
+inline title. The picker searches Lucide icons and the full English Emojibase emoji
+catalogue by name and keyword (for example, `scissor`, `book`, or `cutting`). Multiple
+search words narrow the results, with name matches ranked ahead of keyword matches.
+Emoji, including skin-tone variants and flags, are bundled for offline search;
+their appearance depends on your system's emoji font. You can also paste emoji
+directly or enter hexadecimal codepoints such as `1f4d6`.
+
+Existing make.md frontmatter is reused without conversion:
+
+```yaml
+sticker: 1f4dd              # emoji hex code
+# sticker: emoji//1f9e0    # make.md-prefixed emoji
+# sticker: lucide//library # Lucide icon
+```
+
+### Navigator and folder notes
+
+A left-sidebar folder and note tree, enabled by default. Open it with the ribbon button
+or **Quality of Life: Open Navigator**. Click a folder to open its same-name folder
+note (`Brain/Brain.md`); use the chevron to expand/collapse its contents. Folders without
+a note expand on click, and their context menu offers **Create folder note**. Folder
+notes are hidden from the list of children.
+
+Folder icons come from the folder note's `sticker` field. Click an icon or use the
+folder context menu to set/change/remove it; setting an icon creates the folder note
+if necessary. Both emoji and Lucide icons are supported.
+Default folder and Markdown-note icons also open the sticker picker when no sticker
+has been set. Clicking the entry's name still opens it.
+
+Drag files or folders to reorder **siblings**, or use **Move up/down** in the context
+menu. A highlighted line shows whether the drop will insert before or after the target.
+This never moves files between folders.
+
+Order is a `qol-nav-sort` list in the **parent's folder note**. The top-level list lives
+in `Vault.md`. Entries are child names relative to the parent, including file extensions:
+
+```yaml
+qol-nav-sort:
+  - Journal
+  - Tasks.md
+  - Brain
+```
+
+Inside `Journal/Journal.md`, entries would be names such as `Daily`, `Weekly`, or
+`Review.md`, not full vault paths. Files and folders not listed appear alphabetically
+below listed entries.
+
+Reordering writes **one parent note**, creating it if necessary and preserving its
+sticker, body, other frontmatter, and list entries hidden from Navigator.
+Rename, move, and delete operations keep list references consistent; moving an entry
+to another folder does not add it to the new parent's list.
+Only expanded-state and hidden-path preferences are stored in QOL's plugin settings.
+Renaming a folder also renames its same-name folder note using Obsidian's file manager.
+
+Disable make.md to avoid duplicate decorations and navigation UI. Existing note and
+folder-note stickers work directly from frontmatter; no import or conversion is needed.
+Navigator starts in alphabetical order until you arrange entries or add `qol-nav-sort`.
+QOL does not
+read, modify, or delete make.md's databases or settings. Spaces, contexts, focuses,
+banners, and custom icon sets are not ported.
+
 ## Settings
 
 All features are configured from a single settings pane (Settings → Quality of Life),
@@ -110,7 +187,27 @@ with a section per feature.
 | Limit | *(all)* | Max entries per callout |
 | Refresh interval | `500` | Debounce delay in ms while editing |
 
+### Stickers
+
+| Setting | Default | Description |
+| --- | --- | --- |
+| Enable stickers | on | Enable note decorations and file-menu sticker actions |
+| Links in the editor | on | Decorate internal links in Live Preview and Source mode |
+| Links in Reading view | on | Decorate rendered internal links, including QOL blocks |
+| Note titles | on | Clickable sticker/add-sticker button beside the inline title |
+| Note tabs | on | Show stickers instead of the default note tab icon |
+
+### Navigator
+
+| Setting | Default | Description |
+| --- | --- | --- |
+| Enable Navigator | on | Show the folder/note sidebar |
+| Hidden paths | `Spaces` | Vault-relative files/folders to hide, one per line |
+
 ## Deploy
+
+Node typings track Obsidian's Node 24 runtime. CodeMirror state/view dependencies
+are pinned to the Obsidian API package's peer versions and remain external to the bundle.
 
 ```sh
 ln -s ~/obsidian/.obsidian/plugins/obsidian-qol dist
