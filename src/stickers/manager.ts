@@ -5,9 +5,13 @@ import { externalLinkIcon, folderNotePath, mergeNavigationOrder, parseNavigation
 import { paintSticker, StickerPicker } from "./picker";
 import { refreshStickers, stickerExtension } from "./editor";
 
+const RENDERED_LINK = ".internal-link[data-href], a.internal-link, a.external-link";
+type LinkMode = "editor" | "reading";
+
 export class StickerManager extends Component {
 	readonly editors = new Set<EditorView>();
 	private documents = new Set<Document>();
+	private observers = new Map<HTMLElement, MutationObserver>();
 	private timer: ReturnType<typeof setTimeout> | null = null;
 	private invalidNavigationOrder = new Set<string>();
 
@@ -141,10 +145,12 @@ export class StickerManager extends Component {
 		this.documents.add(document);
 		const el = document.createElement("span");
 		el.className = `qol-sticker ${cls}`;
+		if (parseSticker(raw)?.kind === "emoji") el.classList.add("qol-emoji-sticker");
 		el.setAttribute("role", "button");
 		el.tabIndex = 0;
 		el.setAttribute("aria-label", raw ? "Change sticker" : "Set sticker");
 		el.title = raw ? "Change sticker" : "Set sticker";
+		el.contentEditable = "false";
 		if (!paintSticker(el, raw)) setIcon(el, fallbackIcon);
 		const open = (event: Event) => {
 			event.preventDefault();
@@ -172,25 +178,79 @@ export class StickerManager extends Component {
 
 	decorateReading(el: HTMLElement, source: string): void {
 		this.documents.add(el.ownerDocument);
-		el.querySelectorAll<HTMLElement>("a.internal-link, a.external-link").forEach(link => {
+		const mode = el.closest(".markdown-source-view") ? "editor" : "reading";
+		this.renderedLinks(el).forEach(link => {
 			link.dataset.qolSource = source;
-			this.decorateLink(link, source);
+			link.dataset.qolMode = mode;
+			this.decorateLink(link, source, mode);
 		});
 	}
 
-	private decorateLink(link: HTMLElement, source: string): void {
-		link.querySelectorAll(".qol-link-sticker").forEach(el => el.remove());
-		if (!this.settings.enabled || !this.settings.reading) return;
+	private renderedLinks(el: Element): HTMLElement[] {
+		const links = Array.from(el.querySelectorAll<HTMLElement>(RENDERED_LINK));
+		if (el.matches(RENDERED_LINK)) links.unshift(el as HTMLElement);
+		return links;
+	}
+
+	private decorateLink(link: HTMLElement, source: string, mode: LinkMode): void {
 		const href = link.getAttribute("data-href") ?? link.getAttribute("href");
-		if (!href) return;
-		if (link.classList.contains("external-link")) {
-			const icon = externalLinkIcon(href) ?? "external-link";
-			link.prepend(this.createExternalSticker(link.ownerDocument, icon));
-			return;
+		let key = "";
+		let icon: string | null = null;
+		let file: TFile | null = null;
+		let raw: string | null = null;
+		if (this.settings.enabled && this.settings[mode] && href && !link.isContentEditable) {
+			if (link.classList.contains("external-link")) {
+				icon = externalLinkIcon(href) ?? "external-link";
+				key = `external:${icon}`;
+			} else {
+				file = this.resolveLink(href, source);
+				raw = file && this.rawSticker(file);
+				if (file && raw) key = JSON.stringify([file.path, raw]);
+			}
 		}
-		const file = this.resolveLink(href, source);
-		const raw = file && this.rawSticker(file);
-		if (file && raw) link.prepend(this.createSticker(link.ownerDocument, file.path, raw, "qol-link-sticker"));
+		const existing = link.querySelectorAll(".qol-link-sticker");
+		if (link.dataset.qolDecoration === key && existing.length === (key ? 1 : 0)) return;
+		existing.forEach(el => el.remove());
+		link.dataset.qolDecoration = key;
+		if (icon) link.prepend(this.createExternalSticker(link.ownerDocument, icon));
+		else if (file && raw) link.prepend(this.createSticker(link.ownerDocument, file.path, raw, "qol-link-sticker"));
+	}
+
+	private decorateViewLinks(el: Element, view: MarkdownView): void {
+		const file = view.file;
+		if (!file) return;
+		const mode: LinkMode = view.getMode() === "source" ? "editor" : "reading";
+		this.renderedLinks(el).forEach(link => {
+			const source = link.closest(".internal-embed") && link.dataset.qolSource
+				? link.dataset.qolSource : file.path;
+			link.dataset.qolSource = source;
+			link.dataset.qolMode = mode;
+			this.decorateLink(link, source, mode);
+		});
+	}
+
+	private observeView(view: MarkdownView): void {
+		const container = view.containerEl;
+		if (this.observers.has(container)) return;
+		const observer = new MutationObserver(records => {
+			const roots = new Set<Element>();
+			for (const record of records) {
+				if (record.type === "attributes") roots.add(record.target as Element);
+				for (const node of record.addedNodes) {
+					if (node.nodeType === 1) roots.add(node as Element);
+					else if (node.parentElement?.matches(RENDERED_LINK)) roots.add(node.parentElement);
+				}
+			}
+			for (const root of roots) {
+				if (container.contains(root) && !root.closest(".qol-sticker, .qol-external-sticker")) {
+					this.decorateViewLinks(root, view);
+				}
+			}
+		});
+		observer.observe(container, {
+			childList: true, subtree: true, attributes: true, attributeFilter: ["href", "data-href", "contenteditable"],
+		});
+		this.observers.set(container, observer);
 	}
 
 	scheduleRefresh(): void {
@@ -198,25 +258,37 @@ export class StickerManager extends Component {
 		this.timer = setTimeout(() => { this.timer = null; this.refresh(); }, 100);
 	}
 
+	private unwrapTitles(document: Document): void {
+		document.querySelectorAll(".qol-title-row").forEach(row => row.replaceWith(...Array.from(row.childNodes)));
+	}
+
 	refresh(): void {
 		for (const editor of this.editors) editor.dispatch({ effects: refreshStickers.of(null) });
 		for (const document of this.documents) {
 			document.querySelectorAll(".qol-title-sticker, .qol-tab-sticker").forEach(el => el.remove());
+			this.unwrapTitles(document);
 			document.querySelectorAll(".qol-tab-has-sticker").forEach(el => el.classList.remove("qol-tab-has-sticker"));
-			document.querySelectorAll<HTMLElement>("a[data-qol-source]").forEach(link =>
-				this.decorateLink(link, link.dataset.qolSource ?? ""));
+			document.querySelectorAll<HTMLElement>("[data-qol-source]").forEach(link =>
+				this.decorateLink(link, link.dataset.qolSource ?? "", link.dataset.qolMode === "editor" ? "editor" : "reading"));
 		}
+		const containers = new Set<HTMLElement>();
 		for (const leaf of this.app.workspace.getLeavesOfType("markdown")) {
 			const view = leaf.view;
 			if (!(view instanceof MarkdownView) || !view.file) continue;
 			const file = view.file;
+			containers.add(view.containerEl);
 			this.documents.add(view.containerEl.ownerDocument);
+			this.observeView(view);
+			this.decorateViewLinks(view.containerEl, view);
 			if (!this.settings.enabled) continue;
 			const raw = this.rawSticker(file);
 			if (this.settings.titles) {
 				view.containerEl.querySelectorAll<HTMLElement>(".inline-title").forEach(title => {
-					if (!title.closest(".internal-embed")) title.before(
-						this.createSticker(title.ownerDocument, file.path, raw, "qol-title-sticker"));
+					if (title.closest(".internal-embed")) return;
+					const row = title.ownerDocument.createElement("div");
+					row.className = "qol-title-row";
+					title.before(row);
+					row.append(this.createSticker(title.ownerDocument, file.path, raw, "qol-title-sticker"), title);
 				});
 			}
 			// Obsidian has no public tab-icon setter; guard this optional DOM integration.
@@ -228,15 +300,28 @@ export class StickerManager extends Component {
 				}
 			}
 		}
+		for (const [container, observer] of this.observers) {
+			if (!containers.has(container)) {
+				observer.disconnect();
+				this.observers.delete(container);
+			}
+		}
 		this.plugin.refreshNavigator();
 	}
 
 	onunload(): void {
 		if (this.timer) clearTimeout(this.timer);
+		for (const observer of this.observers.values()) observer.disconnect();
+		this.observers.clear();
 		for (const document of this.documents) {
 			document.querySelectorAll(".qol-sticker, .qol-external-sticker").forEach(el => el.remove());
+			this.unwrapTitles(document);
 			document.querySelectorAll(".qol-tab-has-sticker").forEach(el => el.classList.remove("qol-tab-has-sticker"));
-			document.querySelectorAll<HTMLElement>("[data-qol-source]").forEach(el => delete el.dataset.qolSource);
+			document.querySelectorAll<HTMLElement>("[data-qol-source]").forEach(el => {
+				delete el.dataset.qolSource;
+				delete el.dataset.qolMode;
+				delete el.dataset.qolDecoration;
+			});
 		}
 		this.documents.clear();
 	}
