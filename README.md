@@ -60,6 +60,32 @@ Individual notes use `created` and `updated` frontmatter for their timestamps, f
 back to filesystem creation and modification times respectively. Notes created in the
 period appear only in **Created**, not again in **Modified**.
 
+### Goals
+
+Shows interactive tasks from a weekly or monthly note, without embed chrome, headings,
+or other section text. Use `weekly` in daily notes and `monthly` in weekly notes:
+
+````markdown
+```goals
+period: weekly          # "weekly" or "monthly" (required)
+date: 2026-10-23        # optional: YYYY-MM-DD or "today"
+section: Goals*         # optional: heading prefix, or exact heading without *
+```
+````
+
+The date defaults to the containing note's `date`, then `created` frontmatter, then
+its daily, weekly, or monthly filename. Weekly filenames use the ISO week's Monday.
+Sources are `Journal/Weekly/YYYY-Www.md` or `Journal/Monthly/YYYY-MM.md`; folders and
+the default section (`Goals*`) are configurable in **Settings → Quality of Life → Goals**.
+The first matching heading is used, including tasks under its subheadings.
+
+Nested tasks, Markdown links, and completed tasks are retained. Completed tasks and
+their links/dates are muted; unfinished children remain normally styled.
+Checkboxes update the source note, using the installed Tasks plugin's toggle API
+for completion dates, status transitions, and recurrence. Without Tasks, checkboxes
+use ordinary unchecked/checked toggling without automatic dates. Source changes
+refresh displayed goals; concurrent edits are rejected rather than overwriting them.
+
 ### Links
 
 Automatically appends a **Links** section to the bottom of every note with collapsed

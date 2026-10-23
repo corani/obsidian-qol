@@ -80,6 +80,48 @@
 	margin-bottom: var(--size-4-1);
 }
 
+/* Goals */
+
+.qol-goals .qol-goals-list {
+	list-style: none;
+	padding-inline-start: 0;
+	margin: 0;
+}
+
+.qol-goals-row {
+	display: flex;
+	align-items: baseline;
+	gap: 0.5em;
+	color: var(--text-normal);
+}
+
+.qol-goals-row > .task-list-item-checkbox {
+	position: relative;
+	flex-shrink: 0;
+	margin: 0;
+}
+
+.qol-goals-text {
+	min-width: 0;
+}
+
+.qol-goals-text > p {
+	margin: 0;
+}
+
+.qol-goals-task:is([data-task="x"], [data-task="X"]) > .qol-goals-row,
+.qol-goals-task:is([data-task="x"], [data-task="X"]) > .qol-goals-row a {
+	color: var(--text-muted);
+}
+
+.qol-goals-empty {
+	color: var(--text-muted);
+}
+
+.qol-goals-error {
+	color: var(--text-error);
+}
+
 /* ── Birthdays ────────────────────────────────────────────────────────────── */
 
 .birthdays-table {
