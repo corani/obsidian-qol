@@ -57,6 +57,18 @@ export const DEFAULT_MODIFIED_SETTINGS: ModifiedSettings = {
 	defaultLimit: null,
 };
 
+export interface GoalsSettings {
+	defaultSection: string;
+	weeklyNotesFolder: string;
+	monthlyNotesFolder: string;
+}
+
+export const DEFAULT_GOALS_SETTINGS: GoalsSettings = {
+	defaultSection: "Goals*",
+	weeklyNotesFolder: "Journal/Weekly",
+	monthlyNotesFolder: "Journal/Monthly",
+};
+
 // ── Links ─────────────────────────────────────────────────────────────────────
 
 export interface LinksSettings {
@@ -129,6 +141,7 @@ export interface QolSettings {
 	oneline: OneLineSettings;
 	birthdays: BirthdaysSettings;
 	modified: ModifiedSettings;
+	goals: GoalsSettings;
 	links: LinksSettings;
 	capture: QuickCaptureSettings;
 	utilities: UtilitiesSettings;
@@ -140,6 +153,7 @@ export const DEFAULT_SETTINGS: QolSettings = {
 	oneline: DEFAULT_ONELINE_SETTINGS,
 	birthdays: DEFAULT_BIRTHDAYS_SETTINGS,
 	modified: DEFAULT_MODIFIED_SETTINGS,
+	goals: DEFAULT_GOALS_SETTINGS,
 	links: DEFAULT_LINKS_SETTINGS,
 	capture: DEFAULT_CAPTURE_SETTINGS,
 	utilities: DEFAULT_UTILITIES_SETTINGS,
@@ -161,6 +175,7 @@ export class QolSettingTab extends PluginSettingTab {
 		this.addOneLineSection(containerEl);
 		this.addBirthdaysSection(containerEl);
 		this.addModifiedSection(containerEl);
+		this.addGoalsSection(containerEl);
 		this.addLinksSection(containerEl);
 		this.addCaptureSection(containerEl);
 		this.addUtilitiesSection(containerEl);
@@ -249,6 +264,23 @@ export class QolSettingTab extends PluginSettingTab {
 			.addText(t => t.setPlaceholder(DEFAULT_ONELINE_SETTINGS.weeklyNotesFolder).setValue(s.weeklyNotesFolder).onChange(async v => {
 				s.weeklyNotesFolder = v || DEFAULT_ONELINE_SETTINGS.weeklyNotesFolder; await save();
 			}));
+	}
+
+	private addGoalsSection(containerEl: HTMLElement) {
+		this.heading(containerEl, "Goals");
+		const card = this.card(containerEl);
+		const s = this.plugin.settings.goals;
+		for (const [key, name, description] of [
+			["defaultSection", "Default section", "Heading to extract. A trailing * matches a heading prefix."],
+			["weeklyNotesFolder", "Weekly notes folder", "Folder containing YYYY-Www.md notes."],
+			["monthlyNotesFolder", "Monthly notes folder", "Folder containing YYYY-MM.md notes."],
+		] as const) {
+			new Setting(card).setName(name).setDesc(description)
+				.addText(t => t.setPlaceholder(DEFAULT_GOALS_SETTINGS[key]).setValue(s[key]).onChange(async value => {
+					s[key] = value.trim() || DEFAULT_GOALS_SETTINGS[key];
+					await this.plugin.saveSettings();
+				}));
+		}
 	}
 
 	private addBirthdaysSection(containerEl: HTMLElement) {

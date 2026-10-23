@@ -3,6 +3,7 @@ import { QolSettings, DEFAULT_SETTINGS, QolSettingTab } from "./settings";
 import { OneLineBlock } from "./oneline/renderer";
 import { BirthdaysBlock } from "./birthdays/renderer";
 import { ModifiedBlock } from "./modified/renderer";
+import { GoalsBlock } from "./goals/renderer";
 import { updateView, removeFromView } from "./links/renderer";
 import { QuickCaptureModal, isOneLine, isTodo } from "./capture/modal";
 import { getOrCreateDailyNote, appendToSection } from "./capture/inserter";
@@ -49,6 +50,9 @@ export default class QolPlugin extends Plugin {
 
 		this.registerMarkdownCodeBlockProcessor("modified", (source, el, ctx) =>
 			ctx.addChild(new ModifiedBlock(this.app, this.settings.modified, source, el, ctx)));
+
+		this.registerMarkdownCodeBlockProcessor("goals", (source, el, ctx) =>
+			ctx.addChild(new GoalsBlock(this.app, this.settings.goals, source, el, ctx)));
 
 		this.registerLinksEvents();
 		this.app.workspace.onLayoutReady(() => this.scheduleLinksUpdate());
@@ -141,6 +145,7 @@ export default class QolPlugin extends Plugin {
 			oneline:    Object.assign({}, DEFAULT_SETTINGS.oneline,    saved?.oneline),
 			birthdays:  Object.assign({}, DEFAULT_SETTINGS.birthdays,  saved?.birthdays),
 			modified:   Object.assign({}, DEFAULT_SETTINGS.modified,   saved?.modified),
+			goals:      Object.assign({}, DEFAULT_SETTINGS.goals,      saved?.goals),
 			links:      Object.assign({}, DEFAULT_SETTINGS.links,      saved?.links),
 			capture:    Object.assign({}, DEFAULT_SETTINGS.capture,    saved?.capture),
 			utilities:  Object.assign({}, DEFAULT_SETTINGS.utilities,  saved?.utilities),
