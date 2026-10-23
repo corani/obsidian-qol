@@ -5,6 +5,36 @@ import type { LinksSettings } from "../settings";
 const FOOTER_CLS = "links-footer";
 const FOOTER_KEY_ATTR = "data-links-key";
 const rendering = new WeakMap<MarkdownView, boolean>();
+const footerLayouts = new WeakMap<MarkdownView, Component>();
+
+export function alignEditorFooter(footer: HTMLElement, content: HTMLElement, container: HTMLElement): void {
+	const contentRect = content.getBoundingClientRect();
+	if (contentRect.width === 0) return;
+	const containerRect = container.getBoundingClientRect();
+	const contentStyle = getComputedStyle(content);
+	const containerStyle = getComputedStyle(container);
+	const px = (value: string) => parseFloat(value) || 0;
+	const left = contentRect.left + px(contentStyle.borderLeftWidth) + px(contentStyle.paddingLeft);
+	const right = contentRect.right - px(contentStyle.borderRightWidth) - px(contentStyle.paddingRight);
+	const containerLeft = containerRect.left + px(containerStyle.borderLeftWidth) + px(containerStyle.paddingLeft);
+	const containerRight = containerRect.right - px(containerStyle.borderRightWidth) - px(containerStyle.paddingRight);
+	footer.style.marginInlineStart = `${containerStyle.direction === "rtl" ? containerRight - right : left - containerLeft}px`;
+	footer.style.width = `${Math.max(0, right - left)}px`;
+}
+
+function watchEditorLayout(view: MarkdownView, footer: HTMLElement, container: Element): void {
+	if (!container.matches(".cm-sizer")) return;
+	const content = container.querySelector<HTMLElement>(".cm-content");
+	if (!content) return;
+	const align = () => alignEditorFooter(footer, content, container as HTMLElement);
+	align();
+	const observer = new ResizeObserver(align);
+	observer.observe(content);
+	observer.observe(container);
+	const lifecycle = view.addChild(new Component());
+	lifecycle.register(() => observer.disconnect());
+	footerLayouts.set(view, lifecycle);
+}
 
 function getTargetContainer(view: MarkdownView): Element | null {
 	// Reading mode: .markdown-preview-section that is visible
@@ -66,7 +96,7 @@ export async function updateView(app: App, view: MarkdownView, settings: LinksSe
 		if (existing?.getAttribute(FOOTER_KEY_ATTR) === key) return;
 
 		// Remove all footers from this view (handles mode switches)
-		view.contentEl.querySelectorAll(`.${FOOTER_CLS}`).forEach(el => el.remove());
+		removeFromView(view);
 
 		if (!container) return;
 		if (backlinks.length === 0 && outlinks.length === 0) return;
@@ -77,6 +107,7 @@ export async function updateView(app: App, view: MarkdownView, settings: LinksSe
 		footerEl.className = FOOTER_CLS;
 		footerEl.setAttribute(FOOTER_KEY_ATTR, key);
 		container.appendChild(footerEl);
+		watchEditorLayout(view, footerEl, container);
 
 		await MarkdownRenderer.render(app, markdown, footerEl, file.path, owner);
 
@@ -94,5 +125,10 @@ export async function updateView(app: App, view: MarkdownView, settings: LinksSe
 }
 
 export function removeFromView(view: MarkdownView): void {
+	const lifecycle = footerLayouts.get(view);
+	if (lifecycle) {
+		view.removeChild(lifecycle);
+		footerLayouts.delete(view);
+	}
 	view.contentEl.querySelectorAll(`.${FOOTER_CLS}`).forEach(el => el.remove());
 }

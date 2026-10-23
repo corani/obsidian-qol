@@ -90,6 +90,8 @@ refresh displayed goals; concurrent edits are rejected rather than overwriting t
 
 Automatically appends a **Links** section to the bottom of every note with collapsed
 callouts for backlinks and outlinks. No syntax required. Can be disabled in settings.
+In the editor, the section follows the note's text column, including mobile gutters
+and padding, and stays aligned when the layout changes.
 
 ### Quick Capture
 

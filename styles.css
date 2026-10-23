@@ -82,10 +82,22 @@
 
 /* Goals */
 
-.qol-goals .qol-goals-list {
+.qol-goals ul.qol-goals-list {
 	list-style: none;
 	padding-inline-start: 0;
 	margin: 0;
+}
+
+.qol-goals > ul.qol-goals-list {
+	padding-inline-start: 0.6em;
+}
+
+.qol-goals ul.qol-goals-list > li.qol-goals-task {
+	margin-inline-start: 0;
+}
+
+.qol-goals li.qol-goals-task > ul.qol-goals-list {
+	padding-inline-start: var(--list-indent, 2em);
 }
 
 .qol-goals-row {
