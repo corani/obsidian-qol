@@ -170,6 +170,11 @@
 	color: var(--text-muted);
 }
 
+.birthdays-table .birthdays-deceased td,
+.birthdays-table .birthdays-deceased a {
+	color: var(--text-muted);
+}
+
 /* ── Modified ────────────────────────────────────────────────────────────── */
 
 .modified-empty {
