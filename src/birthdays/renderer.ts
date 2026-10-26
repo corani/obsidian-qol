@@ -83,6 +83,7 @@ export class BirthdaysBlock extends MarkdownRenderChild {
 
 	private renderRow(tbody: HTMLElement, person: Person, anchor: Date, showDied: boolean) {
 		const row = tbody.createEl("tr");
+		if (person.died || person.diedUnknown) row.addClass("birthdays-deceased");
 
 		// Name -- internal link
 		const nameCell = row.createEl("td");

@@ -37,6 +37,8 @@ showtitle: false        # hide title bar for this block
 ````
 
 Person notes must have `type: person` and a `born: YYYY-MM-DD` frontmatter field.
+People with a `died` value, including an approximate or unknown death date, are shown
+in muted text, including their name links and dates.
 
 ### Modified
 
