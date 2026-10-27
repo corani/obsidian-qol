@@ -80,7 +80,7 @@ export function resolveGoalsFile(app: App, contextPath: string, config: GoalsCon
 	return file;
 }
 
-export function extractGoals(content: string, section: string): GoalTask[] {
+export function extractGoals(content: string, section: string, required = true): GoalTask[] {
 	const lines = content.split("\n");
 	const prefix = section.endsWith("*");
 	const target = (prefix ? section.slice(0, -1) : section).toLowerCase();
@@ -126,7 +126,7 @@ export function extractGoals(content: string, section: string): GoalTask[] {
 			});
 		}
 	}
-	if (!found) throw new Error(`Goals section not found: ${section}`);
+	if (!found && required) throw new Error(`Goals section not found: ${section}`);
 	return tasks;
 }
 
@@ -148,7 +148,7 @@ export function toggleGoal(app: App, task: GoalTask, path: string): string {
 
 export async function updateGoal(app: App, file: TFile, snapshot: string, task: GoalTask): Promise<void> {
 	await app.vault.process(file, current => {
-		if (current !== snapshot) throw new Error("The goals source changed. Refresh and try again.");
+		if (current !== snapshot) throw new Error("The task source changed. Refresh and try again.");
 		const lines = current.split("\n");
 		if (lines[task.line]?.replace(/\r$/, "") !== task.raw) throw new Error("The source task no longer matches.");
 		const newline = current.includes("\r\n") ? "\r\n" : "\n";

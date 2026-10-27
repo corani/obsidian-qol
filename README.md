@@ -88,6 +88,50 @@ for completion dates, status transitions, and recurrence. Without Tasks, checkbo
 use ordinary unchecked/checked toggling without automatic dates. Source changes
 refresh displayed goals; concurrent edits are rejected rather than overwriting them.
 
+### Next actions
+
+Lists unchecked tasks from the first matching heading (case-insensitive prefix
+match, default **Next Action**), including tasks under subheadings. Notes are
+grouped by their first alias, falling back to the filename, and sorted by filename.
+Each group links to its source note's configured section. Notes without unchecked
+actions display **No next actions defined**.
+
+````markdown
+```next-actions
+folder: Brain
+section: Next Action     # optional; defaults to "Next Action"
+filter:
+  type: project
+  state: in progress
+  private: false
+```
+````
+
+`folder` is required and includes subfolders. The optional `filter` matches arbitrary
+frontmatter property names; all keys must match. Values are type-sensitive strings,
+booleans, numbers, or arrays. A trailing `*` matches a string prefix. For example:
+
+````markdown
+```next-actions
+folder: Brain
+filter:
+  type: goals
+  tags:
+    - goal/*
+```
+````
+
+Array filters match when any property element matches any listed filter value.
+Tags tolerate a leading `#`; quote tags beginning with `#` in YAML.
+Missing or empty (`null`) properties default to `false`, `0`, `""`, or `[]`, according
+to the filter's datatype. For example, `private: false` includes notes without that
+property. Existing values are not coerced between types.
+
+Task text retains Markdown links and nesting. Checking an action updates its source
+note through the same Tasks integration as Goals, including completion dates and
+recurrence, then removes completed actions from the overview. Source edits and
+property/filter membership changes refresh automatically. Dataview is not required.
+
 ### Links
 
 Automatically appends a **Links** section to the bottom of every note with collapsed
