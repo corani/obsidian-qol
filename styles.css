@@ -134,6 +134,23 @@
 	color: var(--text-error);
 }
 
+/* Next actions */
+
+.qol-next-actions-group + .qol-next-actions-group {
+	margin-top: 0.75em;
+}
+
+.qol-next-actions-heading {
+	display: inline-block;
+	font-weight: var(--font-semibold);
+	margin-bottom: 0.25em;
+}
+
+.qol-next-actions-empty {
+	color: var(--text-muted);
+	font-style: italic;
+}
+
 /* ── Birthdays ────────────────────────────────────────────────────────────── */
 
 .birthdays-table {

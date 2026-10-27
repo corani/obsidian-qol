@@ -4,6 +4,7 @@ import { OneLineBlock } from "./oneline/renderer";
 import { BirthdaysBlock } from "./birthdays/renderer";
 import { ModifiedBlock } from "./modified/renderer";
 import { GoalsBlock } from "./goals/renderer";
+import { NextActionsBlock } from "./next-actions/renderer";
 import { updateView, removeFromView } from "./links/renderer";
 import { QuickCaptureModal, isOneLine, isTodo } from "./capture/modal";
 import { getOrCreateDailyNote, appendToSection } from "./capture/inserter";
@@ -53,6 +54,9 @@ export default class QolPlugin extends Plugin {
 
 		this.registerMarkdownCodeBlockProcessor("goals", (source, el, ctx) =>
 			ctx.addChild(new GoalsBlock(this.app, this.settings.goals, source, el, ctx)));
+
+		this.registerMarkdownCodeBlockProcessor("next-actions", (source, el, ctx) =>
+			ctx.addChild(new NextActionsBlock(this.app, source, el)));
 
 		this.registerLinksEvents();
 		this.app.workspace.onLayoutReady(() => this.scheduleLinksUpdate());

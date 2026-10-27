@@ -4,7 +4,7 @@ import { build } from "esbuild";
 
 const { outputFiles } = await build({
 	stdin: {
-		contents: 'export * from "./src/goals/model"; export * from "./src/goals/renderer"; export { Element, notices, rendered } from "obsidian";',
+		contents: 'export * from "./src/goals/model"; export * from "./src/goals/renderer"; export * from "./src/next-actions/renderer"; export { Element, notices, rendered } from "obsidian";',
 		resolveDir: process.cwd(),
 		loader: "ts",
 	},
@@ -23,7 +23,8 @@ const { outputFiles } = await build({
 						constructor(tag = "div", options = {}) { this.tag = tag; this.className = options.cls; this.textContent = options.text; }
 						createEl(tag, options) { const el = new Element(tag, options); this.children.push(el); return el; }
 						createDiv(options) { return this.createEl("div", options); }
-						setAttribute() {}
+						attributes = new Map();
+						setAttribute(name, value) { this.attributes.set(name, value); }
 						empty() { this.children = []; }
 						replaceChildren(...children) { this.children = children; }
 						querySelectorAll() { return this.children.flatMap(el => [...(el.tag === "input" ? [el] : []), ...el.querySelectorAll()]); }
@@ -41,12 +42,13 @@ const { outputFiles } = await build({
 					export const MarkdownRenderer = { render: async (_app, text, el, path) => { el.textContent = text; rendered.push({ text, path }); } };
 					export const notices = [];
 					export class Notice { constructor(message) { notices.push(message); } }
+					export const parseYaml = JSON.parse;
 				`,
 			}));
 		},
 	}],
 });
-const { parseGoalsConfig, resolveGoalsFile, extractGoals, updateGoal, GoalsBlock, Element, notices, rendered } = await import(
+const { parseGoalsConfig, resolveGoalsFile, extractGoals, updateGoal, GoalsBlock, NextActionsBlock, Element, notices, rendered } = await import(
 	`data:text/javascript;base64,${Buffer.from(outputFiles[0].text).toString("base64")}`
 );
 
@@ -71,16 +73,21 @@ function fixture(frontmatter = { date: "2026-10-23", created: "2026-09-01" }) {
 		vault: {
 			...emitter("vault:"),
 			getFileByPath: path => files.get(path) ?? null,
+			getMarkdownFiles: () => [...files.values()],
 			cachedRead: async file => contents.get(file.path),
 			process: async (file, update) => { contents.set(file.path, update(contents.get(file.path))); },
 		},
 		metadataCache: {
 			...emitter("metadata:"),
-			getFileCache: () => ({ frontmatter }),
+			getFileCache: file => ({ frontmatter: file.frontmatter ?? frontmatter }),
 		},
 		plugins: { plugins: {} },
 	};
-	function add(path, content = "") { const file = { path }; files.set(path, file); contents.set(path, content); return file; }
+	function add(path, content = "") {
+		const name = path.split("/").pop();
+		const file = { path, name, basename: name.replace(/\.md$/, "") };
+		files.set(path, file); contents.set(path, content); return file;
+	}
 	add(contextPath);
 	return { app, files, contents, listeners, add };
 }
@@ -205,6 +212,76 @@ test("renders nested tasks with source link context, writes back, refreshes, and
 	} finally {
 		block.unload();
 		assert.ok([...f.listeners.values()].every(set => set.size === 0));
+		if (previous === undefined) delete globalThis.document;
+		else globalThis.document = previous;
+	}
+});
+
+test("renders next-action groups, writes to the selected source through Tasks, and refreshes filter membership", async () => {
+	const previous = globalThis.document;
+	globalThis.document = { createElement: tag => new Element(tag) };
+	const f = fixture();
+	const first = f.add("Brain/A.md", "## Next Action\n- [ ] Duplicate [[Target]]\n");
+	first.frontmatter = { type: "project", state: "in progress", aliases: ["Project A"] };
+	const second = f.add("Brain/B.md", "## Next Action\n- [ ] Duplicate [[Target]]\n");
+	second.frontmatter = { type: "project", state: "in progress", private: false };
+	const noActions = f.add("Brain/C.md", "## Other\n- [ ] Elsewhere\n");
+	noActions.frontmatter = { type: "project", state: "in progress" };
+	const hidden = f.add("Brain/D.md", "## Next Action\n- [ ] Private action\n");
+	hidden.frontmatter = { type: "project", state: "in progress", private: true };
+	const el = new Element();
+	const block = new NextActionsBlock(f.app, JSON.stringify({
+		folder: "Brain", filter: { type: "project", state: "in progress", private: false },
+	}), el);
+	const firstSnapshot = f.contents.get(first.path);
+	f.app.plugins.plugins["obsidian-tasks-plugin"] = {
+		apiV1: { executeToggleTaskDoneCommand: (raw, path) => {
+			assert.equal(path, second.path);
+			return raw.replace("[ ]", "[x]") + " ✅ 2026-10-27";
+		} },
+	};
+	try {
+		rendered.length = 0;
+		await block.onload();
+		const groups = el.children[0].children;
+		assert.deepEqual(groups.map(g => g.children[0].textContent), ["Project A", "B", "C"]);
+		assert.equal(groups[0].children[0].attributes.get("data-href"), "Brain/A.md#Next Action");
+		assert.equal(groups[2].children[1].textContent, "No next actions defined");
+		assert.deepEqual(rendered.map(r => r.path), [first.path, second.path]);
+		el.querySelectorAll()[1].events.change();
+		await new Promise(resolve => setTimeout(resolve, 0));
+		assert.equal(f.contents.get(first.path), firstSnapshot);
+		assert.match(f.contents.get(second.path), /\[x\] Duplicate \[\[Target\]\] ✅ 2026-10-27/);
+		assert.equal(el.querySelectorAll().length, 1);
+		assert.equal(el.children[0].children[1].children[1].textContent, "No next actions defined");
+		first.frontmatter.state = "done";
+		for (const callback of f.listeners.get("metadata:changed")) callback(first);
+		await new Promise(resolve => setTimeout(resolve, 130));
+		assert.deepEqual(el.children[0].children.map(g => g.children[0].textContent), ["B", "C"]);
+		assert.equal(el.querySelectorAll().length, 0);
+	} finally {
+		block.unload();
+		assert.ok([...f.listeners.values()].every(set => set.size === 0));
+		if (previous === undefined) delete globalThis.document;
+		else globalThis.document = previous;
+	}
+});
+
+test("next-action group links and tasks use the configured section", async () => {
+	const previous = globalThis.document;
+	globalThis.document = { createElement: tag => new Element(tag) };
+	const f = fixture();
+	const file = f.add("Brain/Project.md", "## Next Action\n- [ ] Not selected\n## Follow Up\n- [ ] Selected\n");
+	const el = new Element();
+	const block = new NextActionsBlock(f.app, JSON.stringify({ folder: "Brain", section: "Follow Up" }), el);
+	try {
+		rendered.length = 0;
+		await block.onload();
+		const group = el.children[0].children[0];
+		assert.equal(group.children[0].attributes.get("data-href"), `${file.path}#Follow Up`);
+		assert.deepEqual(rendered.map(r => r.text), ["Selected"]);
+	} finally {
+		block.unload();
 		if (previous === undefined) delete globalThis.document;
 		else globalThis.document = previous;
 	}
