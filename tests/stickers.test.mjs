@@ -84,6 +84,36 @@ test("assigns immutable icons by external link type rather than attempting a not
 	]) assert.equal(externalLinkIcon(target), icon, target);
 });
 
+test("uses host-specific web icons for GitHub and YouTube without matching unrelated hosts", () => {
+	for (const [target, icon] of [
+		["https://github.com/corani/obsidian-qol", "github"],
+		["https://gist.github.com/user/id", "github"],
+		["https://github.wdf.sap.corp/velocity/vsystem", "github"],
+		["https://github.tools.sap/connectivity-services/repo", "github"],
+		["https://gist.github.wdf.sap.corp/example", "github"],
+		["https://gist.github.tools.sap/example", "github"],
+		["HTTP://GITHUB.COM:8080/repo", "github"],
+		["//github.com/repo", "github"],
+		["www.github.com/repo", "github"],
+		["https://github.com./repo", "github"],
+		["https://www.youtube.com/watch?v=123", "square-play"],
+		["https://m.youtube.com/watch?v=123", "square-play"],
+		["https://youtu.be/123", "square-play"],
+		["https://www.youtube-nocookie.com/embed/123", "square-play"],
+		["www.youtube.com/watch?v=123", "square-play"],
+		["https://github.com.example.org/repo", "globe"],
+		["https://notgithub.com", "globe"],
+		["https://github.wdf.sap.corp.example.org/repo", "globe"],
+		["https://notgithub.tools.sap/repo", "globe"],
+		["https://youtube.com@example.org", "globe"],
+		["https://example.org/youtube.com", "globe"],
+		["https://example.org/?url=https://github.com", "globe"],
+		["https://[invalid", "globe"],
+	]) assert.equal(externalLinkIcon(target), icon, target);
+	const links = findLinks("[Repo](https://github.com/corani/obsidian-qol) https://youtu.be/123");
+	assert.deepEqual(links.map(link => link.icon), ["github", "square-play"]);
+});
+
 test("uses same-name folder notes without confusing neighboring folders", () => {
 	assert.equal(folderNotePath("Brain"), "Brain/Brain.md");
 	assert.equal(folderNotePath("Journal/Daily"), "Journal/Daily/Daily.md");
