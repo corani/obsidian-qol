@@ -32,7 +32,22 @@ export function resolveNoteLink(app: App, text: string, source: string): TFile |
 }
 
 export function externalLinkIcon(target: string): string | null {
-	if (/^(?:https?:\/\/|\/\/|www\.)/i.test(target)) return "globe";
+	if (/^(?:https?:\/\/|\/\/|www\.)/i.test(target)) {
+		const url = /^https?:\/\//i.test(target) ? target
+			: target.startsWith("//") ? `https:${target}` : `https://${target}`;
+		try {
+			const host = new URL(url).hostname.replace(/\.$/, "");
+			if (["github.com", "github.wdf.sap.corp", "github.tools.sap"].some(domain => host === domain || host.endsWith(`.${domain}`))) {
+				return "github";
+			}
+			if (["youtube.com", "youtu.be", "youtube-nocookie.com"].some(domain => host === domain || host.endsWith(`.${domain}`))) {
+				return "square-play";
+			}
+		} catch (error) {
+			if (!(error instanceof TypeError)) throw error;
+		}
+		return "globe";
+	}
 	if (/^mailto:/i.test(target)) return "mail";
 	if (/^tel:/i.test(target)) return "phone";
 	if (/^(?:file|smb|afp|nfs):/i.test(target)) {

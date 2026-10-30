@@ -161,7 +161,10 @@ Links in the Properties/frontmatter panel and dynamically rendered blocks (inclu
 birthday results) also show stickers, following the current editor/Reading-view
 visibility setting. Editable property text is left untouched.
 
-External links get fixed, non-editable icons: a globe for web links, an envelope for
+External links get fixed, non-editable icons: GitHub's icon for `github.com`,
+`github.wdf.sap.corp`, and `github.tools.sap`; a play
+button for YouTube (`youtube.com`, `youtu.be`, and `youtube-nocookie.com`), and a globe
+for other web links. Host matching includes subdomains. An envelope is used for
 email, a phone for telephone links, and folder/file-type icons for `file://` and network
 file links (documents, images, audio, video, archives). Other URL schemes use an
 external-link icon. These follow the same editor/Reading-view visibility settings.
