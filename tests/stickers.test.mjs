@@ -84,7 +84,7 @@ test("assigns immutable icons by external link type rather than attempting a not
 	]) assert.equal(externalLinkIcon(target), icon, target);
 });
 
-test("uses host-specific web icons for GitHub and YouTube without matching unrelated hosts", () => {
+test("uses host-specific web icons for GitHub and video sites without matching unrelated hosts", () => {
 	for (const [target, icon] of [
 		["https://github.com/corani/obsidian-qol", "github"],
 		["https://gist.github.com/user/id", "github"],
@@ -101,6 +101,10 @@ test("uses host-specific web icons for GitHub and YouTube without matching unrel
 		["https://youtu.be/123", "square-play"],
 		["https://www.youtube-nocookie.com/embed/123", "square-play"],
 		["www.youtube.com/watch?v=123", "square-play"],
+		["https://video.sap.com/watch/123", "square-play"],
+		["https://www.video.sap.com/watch/123", "square-play"],
+		["https://video.sap.com.example.org/watch/123", "globe"],
+		["https://notvideo.sap.com/watch/123", "globe"],
 		["https://github.com.example.org/repo", "globe"],
 		["https://notgithub.com", "globe"],
 		["https://github.wdf.sap.corp.example.org/repo", "globe"],
