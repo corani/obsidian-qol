@@ -197,7 +197,7 @@ test("renders nested tasks with source link context, writes back, refreshes, and
 		assert.ok(rendered.every(r => r.path === weeklyPath));
 		const parent = el.children[0].children[0].children[0];
 		assert.equal(parent.dataset.task, "x");
-		assert.equal(parent.children[1].children[0].dataset.task, " ");
+		assert.equal(parent.children[2].children[0].dataset.task, " ");
 		const checkboxes = el.querySelectorAll();
 		assert.deepEqual(checkboxes.map(c => c.checked), [true, false]);
 		checkboxes[1].events.change();
@@ -212,6 +212,46 @@ test("renders nested tasks with source link context, writes back, refreshes, and
 	} finally {
 		block.unload();
 		assert.ok([...f.listeners.values()].every(set => set.size === 0));
+		if (previous === undefined) delete globalThis.document;
+		else globalThis.document = previous;
+	}
+});
+
+test("renders native task markup for alternative statuses without changing source statuses", async () => {
+	const previous = globalThis.document;
+	globalThis.document = { createElement: tag => new Element(tag) };
+	const f = fixture();
+	const statuses = [" ", "x", "X", "-", "/", ">", "<", "?", "!", "*", '"'];
+	const snapshot = "## Goals\n" + statuses.map(status =>
+		`- [${status}] Status ${status}\n\t- [ ] Unfinished child\n`).join("");
+	f.add(weeklyPath, snapshot);
+	const el = new Element();
+	const block = new GoalsBlock(f.app, settings, "period: weekly", el, { sourcePath: contextPath });
+	try {
+		await block.onload();
+		const list = el.children[0].children[0];
+		assert.ok(list.className.split(" ").includes("contains-task-list"));
+		assert.equal(list.children.length, statuses.length);
+		for (const [index, status] of statuses.entries()) {
+			const item = list.children[index];
+			const [checkbox, body, nestedList] = item.children;
+			assert.equal(item.dataset.task, status);
+			assert.ok(item.className.split(" ").includes("task-list-item"));
+			assert.equal(item.className.split(" ").includes("is-checked"), status !== " ");
+			assert.equal(checkbox.tag, "input");
+			assert.equal(checkbox.className, "task-list-item-checkbox");
+			assert.equal(checkbox.dataset.task, status);
+			assert.equal(checkbox.checked, status !== " ");
+			assert.equal(body.className, "qol-goals-text");
+			assert.ok(nestedList.className.split(" ").includes("contains-task-list"));
+			const child = nestedList.children[0];
+			assert.equal(child.dataset.task, " ");
+			assert.equal(child.className.split(" ").includes("is-checked"), false);
+			assert.equal(child.children[0].checked, false);
+		}
+		assert.equal(f.contents.get(weeklyPath), snapshot);
+	} finally {
+		block.unload();
 		if (previous === undefined) delete globalThis.document;
 		else globalThis.document = previous;
 	}

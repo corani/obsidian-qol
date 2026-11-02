@@ -100,29 +100,23 @@
 	padding-inline-start: var(--list-indent, 2em);
 }
 
-.qol-goals-row {
-	display: flex;
-	align-items: baseline;
-	gap: 0.5em;
-	color: var(--text-normal);
-}
-
-.qol-goals-row > .task-list-item-checkbox {
+.qol-goals li.qol-goals-task > .task-list-item-checkbox {
 	position: relative;
-	flex-shrink: 0;
 	margin: 0;
+	margin-inline-end: 0.5em;
 }
 
 .qol-goals-text {
-	min-width: 0;
+	display: inline;
 }
 
 .qol-goals-text > p {
+	display: inline;
 	margin: 0;
 }
 
-.qol-goals-task:is([data-task="x"], [data-task="X"]) > .qol-goals-row,
-.qol-goals-task:is([data-task="x"], [data-task="X"]) > .qol-goals-row a {
+.qol-goals-task:is([data-task="x"], [data-task="X"]) > .qol-goals-text,
+.qol-goals-task:is([data-task="x"], [data-task="X"]) > .qol-goals-text a {
 	color: var(--text-muted);
 }
 

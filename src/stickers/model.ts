@@ -40,7 +40,7 @@ export function externalLinkIcon(target: string): string | null {
 			if (["github.com", "github.wdf.sap.corp", "github.tools.sap"].some(domain => host === domain || host.endsWith(`.${domain}`))) {
 				return "github";
 			}
-			if (["youtube.com", "youtu.be", "youtube-nocookie.com"].some(domain => host === domain || host.endsWith(`.${domain}`))) {
+			if (["youtube.com", "youtu.be", "youtube-nocookie.com", "video.sap.com"].some(domain => host === domain || host.endsWith(`.${domain}`))) {
 				return "square-play";
 			}
 		} catch (error) {
