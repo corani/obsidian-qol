@@ -233,6 +233,26 @@ QOL does not
 read, modify, or delete make.md's databases or settings. Spaces, contexts, focuses,
 banners, and custom icon sets are not ported.
 
+### Timer
+
+Open **Quality of Life: Open timer** from the command palette or use the timer ribbon
+button. It opens as a tab in the right sidebar, alongside panels such as Calendar;
+drag the tab to place it above or below another panel. Obsidian remembers its placement.
+
+The ring shows the remaining time. The subtle **5 / 15 / 25** presets load a duration
+without starting it. Click the central time to enter minutes (`5`) or minutes and
+seconds (`5:00`), then press Enter or click away to apply; Escape cancels an edit.
+The time is read-only while running; pause or stop the timer to edit it.
+Changing the duration stops the current countdown. Play/pause preserves remaining
+time, and Stop resets to the loaded duration. At zero, a quiet chime and an Obsidian
+notice announce completion. Press Play to repeat the duration.
+
+The timer continues while its panel is hidden or closed, and catches up after sleep.
+Reloading Obsidian or disabling QOL clears the countdown. In **Settings → Quality
+of Life → Timer**, configure any number of comma-separated presets (at least one,
+each 1–999 minutes), or turn off the completion chime. Preset changes apply immediately
+without interrupting a running timer.
+
 ## Settings
 
 All features are configured from a single settings pane (Settings → Quality of Life),

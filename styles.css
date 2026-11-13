@@ -556,3 +556,151 @@
 	margin-inline-start: 15px;
 	border-inline-start: 1px solid var(--background-modifier-border);
 }
+
+/* Timer: the ring leads; presets and transport stay deliberately quiet. */
+.qol-timer {
+	padding: 8px 16px 4px !important;
+	overflow: auto;
+}
+
+.qol-timer-panel {
+	width: 100%;
+	max-width: 240px;
+	margin-inline: auto;
+	text-align: center;
+}
+
+.qol-timer-dial {
+	position: relative;
+	width: 100%;
+	max-width: 210px;
+	margin-inline: auto;
+	aspect-ratio: 1;
+	container-type: inline-size;
+}
+
+.qol-timer-dial > svg {
+	display: block;
+	width: 100%;
+	height: 100%;
+	transform: rotate(-90deg);
+	fill: none;
+}
+
+.qol-timer-track {
+	stroke: var(--background-modifier-border);
+	stroke-width: 2;
+}
+
+.qol-timer-progress {
+	stroke: var(--interactive-accent);
+	stroke-width: 6;
+	stroke-linecap: round;
+	stroke-dasharray: 100;
+}
+
+.qol-timer input.qol-timer-value {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 76%;
+	height: auto;
+	padding: 4px 0;
+	border: 0;
+	border-radius: var(--radius-s);
+	background: transparent;
+	box-shadow: none;
+	color: var(--text-normal);
+	font-family: var(--font-interface);
+	font-size: 40px;
+	font-size: clamp(24px, 18cqi, 44px);
+	font-weight: 300;
+	font-variant-numeric: tabular-nums;
+	letter-spacing: -0.035em;
+	line-height: 1.3;
+	text-align: center;
+}
+
+.qol-timer input.qol-timer-value:not([readonly]):hover {
+	background: var(--background-modifier-hover);
+}
+
+.qol-timer input.qol-timer-value:not([readonly]):focus-visible,
+.qol-timer button:focus-visible {
+	outline: 2px solid var(--interactive-accent);
+	outline-offset: 3px;
+}
+
+.qol-timer input.qol-timer-value[aria-invalid="true"] {
+	outline: 1px solid var(--text-error);
+}
+
+.qol-timer-presets,
+.qol-timer-controls {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.qol-timer-presets {
+	margin-top: 4px;
+}
+
+.qol-timer-controls {
+	position: absolute;
+	top: calc(50% + clamp(28px, 16cqi, 40px));
+	left: 50%;
+	transform: translateX(-50%);
+	flex-wrap: nowrap;
+	gap: 16px;
+}
+
+.qol-timer button {
+	min-width: 32px;
+	height: 32px;
+	padding: 4px 8px;
+	border: 0;
+	border-radius: var(--radius-s);
+	background: transparent;
+	box-shadow: none;
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	font-weight: 400;
+	font-variant-numeric: tabular-nums;
+}
+
+.qol-timer button:hover {
+	background: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.qol-timer-presets button,
+.qol-timer-controls button {
+	color: var(--text-faint);
+}
+
+.qol-timer-presets button:hover,
+.qol-timer-presets button:focus-visible,
+.qol-timer-controls button:hover,
+.qol-timer-controls button:focus-visible {
+	color: var(--text-muted);
+}
+
+.qol-timer-controls svg {
+	width: 14px;
+	height: 14px;
+	stroke-width: 1.4;
+}
+
+.qol-timer-status {
+	margin-top: 2px;
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+}
+
+.qol-timer-status:empty {
+	margin-top: 0;
+}

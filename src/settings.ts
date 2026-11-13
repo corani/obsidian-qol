@@ -1,5 +1,6 @@
 import { App, PluginSettingTab, Setting } from "obsidian";
 import type QolPlugin from "./main";
+import { DEFAULT_TIMER_PRESETS, parsePresets } from "./timer/model";
 
 // ── One Line ──────────────────────────────────────────────────────────────────
 
@@ -137,6 +138,16 @@ export const DEFAULT_NAVIGATOR_SETTINGS: NavigatorSettings = {
 
 // ── Combined ──────────────────────────────────────────────────────────────────
 
+export interface TimerSettings {
+	presets: number[];
+	sound: boolean;
+}
+
+export const DEFAULT_TIMER_SETTINGS: TimerSettings = {
+	presets: [...DEFAULT_TIMER_PRESETS],
+	sound: true,
+};
+
 export interface QolSettings {
 	oneline: OneLineSettings;
 	birthdays: BirthdaysSettings;
@@ -147,6 +158,7 @@ export interface QolSettings {
 	utilities: UtilitiesSettings;
 	stickers: StickerSettings;
 	navigator: NavigatorSettings;
+	timer: TimerSettings;
 }
 
 export const DEFAULT_SETTINGS: QolSettings = {
@@ -159,6 +171,7 @@ export const DEFAULT_SETTINGS: QolSettings = {
 	utilities: DEFAULT_UTILITIES_SETTINGS,
 	stickers: DEFAULT_STICKER_SETTINGS,
 	navigator: DEFAULT_NAVIGATOR_SETTINGS,
+	timer: DEFAULT_TIMER_SETTINGS,
 };
 
 // ── Settings Tab ──────────────────────────────────────────────────────────────
@@ -181,6 +194,7 @@ export class QolSettingTab extends PluginSettingTab {
 		this.addUtilitiesSection(containerEl);
 		this.addStickersSection(containerEl);
 		this.addNavigatorSection(containerEl);
+		this.addTimerSection(containerEl);
 	}
 
 	private heading(containerEl: HTMLElement, text: string) {
@@ -482,6 +496,32 @@ export class QolSettingTab extends PluginSettingTab {
 					this.plugin.stickers.refresh();
 				}));
 		}
+	}
+
+	private addTimerSection(containerEl: HTMLElement) {
+		this.heading(containerEl, "Timer");
+		const card = this.card(containerEl);
+		const settings = this.plugin.settings.timer;
+		new Setting(card).setName("Open timer")
+			.setDesc("Show the countdown in the right sidebar. Drag its tab to reposition it.")
+			.addButton(button => button.setButtonText("Open").onClick(() => this.plugin.openTimer()));
+		const description = "One or more durations in minutes (1–999), separated by commas.";
+		const presets = new Setting(card).setName("Presets").setDesc(description);
+		presets.addText(text => text.setPlaceholder("5, 15, 25").setValue(settings.presets.join(", ")).onChange(async value => {
+			const parsed = parsePresets(value);
+			text.inputEl.setAttribute("aria-invalid", String(parsed === null));
+			presets.setDesc(parsed === null ? `${description} Enter a valid list to save changes.` : description);
+			if (parsed === null) return;
+			settings.presets = parsed;
+			await this.plugin.saveSettings();
+			this.plugin.refreshTimerPresets();
+		}));
+		new Setting(card).setName("Completion chime")
+			.setDesc("Play a quiet chime when the timer finishes. An Obsidian notice is always shown.")
+			.addToggle(toggle => toggle.setValue(settings.sound).onChange(async value => {
+				settings.sound = value;
+				await this.plugin.saveSettings();
+			}));
 	}
 
 	private addNavigatorSection(containerEl: HTMLElement) {

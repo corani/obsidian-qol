@@ -11,14 +11,24 @@ import { getOrCreateDailyNote, appendToSection } from "./capture/inserter";
 import { StickerManager } from "./stickers/manager";
 import { renamePath } from "./stickers/model";
 import { NAVIGATOR_TYPE, NavigatorView } from "./navigator/view";
+import { TIMER_TYPE, TimerView } from "./timer/view";
+import { TimerController } from "./timer/controller";
+import { normalizePresets } from "./timer/model";
 
 export default class QolPlugin extends Plugin {
 	settings: QolSettings = DEFAULT_SETTINGS;
 	stickers!: StickerManager;
+	timer!: TimerController;
 	private debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 	async onload() {
 		await this.loadSettings();
+		const presets = this.settings.timer.presets;
+		this.timer = this.addChild(new TimerController(
+			(presets.includes(25) ? 25 : presets[0]) * 60, () => this.settings.timer.sound));
+		this.registerView(TIMER_TYPE, leaf => new TimerView(leaf, this));
+		this.addCommand({ id: "open-timer", name: "Open timer", callback: () => this.openTimer() });
+		this.addRibbonIcon("timer", "Open timer", () => { void this.openTimer(); });
 		this.stickers = this.addChild(new StickerManager(this));
 		this.registerView(NAVIGATOR_TYPE, leaf => new NavigatorView(leaf, this));
 		this.addSettingTab(new QolSettingTab(this.app, this));
@@ -155,6 +165,10 @@ export default class QolPlugin extends Plugin {
 			utilities:  Object.assign({}, DEFAULT_SETTINGS.utilities,  saved?.utilities),
 			stickers: Object.assign({}, DEFAULT_SETTINGS.stickers, saved?.stickers),
 			navigator: Object.assign({}, DEFAULT_SETTINGS.navigator, saved?.navigator),
+			timer: {
+				presets: normalizePresets(saved?.timer?.presets),
+				sound: typeof saved?.timer?.sound === "boolean" ? saved.timer.sound : DEFAULT_SETTINGS.timer.sound,
+			},
 		};
 		this.settings.navigator = {
 			enabled: this.settings.navigator.enabled,
@@ -167,6 +181,25 @@ export default class QolPlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
+	}
+
+	async openTimer(): Promise<void> {
+		try {
+			let leaf = this.app.workspace.getLeavesOfType(TIMER_TYPE)[0];
+			if (!leaf) {
+				const right = this.app.workspace.getRightLeaf(false);
+				if (!right) throw new Error("No sidebar leaf is available.");
+				leaf = right;
+				await leaf.setViewState({ type: TIMER_TYPE, active: true });
+			}
+			await this.app.workspace.revealLeaf(leaf);
+		} catch (error) { this.reportError("Could not open timer", error); }
+	}
+
+	refreshTimerPresets(): void {
+		this.app.workspace.getLeavesOfType(TIMER_TYPE).forEach(leaf => {
+			if (leaf.view instanceof TimerView) leaf.view.refreshPresets();
+		});
 	}
 
 	async openNavigator(): Promise<void> {
