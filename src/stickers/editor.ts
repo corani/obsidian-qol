@@ -3,7 +3,7 @@ import { StateEffect } from "@codemirror/state";
 import { Decoration, DecorationSet, EditorView, ViewPlugin, ViewUpdate, WidgetType } from "@codemirror/view";
 import { editorInfoField } from "obsidian";
 import type { StickerManager } from "./manager";
-import { findLinks } from "./model";
+import { findLinks, imageFileIcon } from "./model";
 
 export const refreshStickers = StateEffect.define<null>();
 
@@ -19,11 +19,11 @@ class StickerWidget extends WidgetType {
 	ignoreEvent(): boolean { return true; }
 }
 
-class ExternalIconWidget extends WidgetType {
+class DefaultIconWidget extends WidgetType {
 	constructor(private manager: StickerManager, private icon: string) { super(); }
-	eq(other: ExternalIconWidget): boolean { return this.icon === other.icon; }
+	eq(other: DefaultIconWidget): boolean { return this.icon === other.icon; }
 	toDOM(view: EditorView): HTMLElement {
-		return this.manager.createExternalSticker(view.dom.ownerDocument, this.icon);
+		return this.manager.createDefaultSticker(view.dom.ownerDocument, this.icon);
 	}
 }
 
@@ -66,13 +66,14 @@ export function stickerExtension(manager: StickerManager) {
 							node = node.parent;
 						}
 						if (excluded) continue;
-						if (link.icon) {
+						const file = link.icon ? null : manager.resolveLink(link.target, source);
+						const icon = link.icon ?? (file && imageFileIcon(file.extension));
+						if (icon) {
 							widgets.push(Decoration.widget({
-								widget: new ExternalIconWidget(manager, link.icon), side: -1,
+								widget: new DefaultIconWidget(manager, icon), side: -1,
 							}).range(from));
 							continue;
 						}
-						const file = manager.resolveLink(link.target, source);
 						const raw = file && manager.rawSticker(file);
 						if (file && raw) widgets.push(Decoration.widget({
 							widget: new StickerWidget(manager, file.path, raw), side: -1,

@@ -71,11 +71,11 @@ function linkFixture(mode = "source") {
 	const stickers = new Map([["People/A.md", "1f4dd"], ["People/B.md", "1f9e0"]]);
 	manager.resolveLink = (href, source) => {
 		resolutions.push([href, source]);
-		return stickers.has(href) ? { path: href } : null;
+		return stickers.has(href) ? { path: href, extension: href.split(".").at(-1) } : null;
 	};
 	manager.rawSticker = file => stickers.get(file.path) ?? null;
 	manager.createSticker = (_document, path, raw) => ({ path, raw });
-	manager.createExternalSticker = (_document, icon) => ({ icon });
+	manager.createDefaultSticker = (_document, icon) => ({ icon });
 	const document = { querySelectorAll: () => [] };
 	const links = [];
 	const root = {

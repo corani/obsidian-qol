@@ -1,7 +1,7 @@
 import { Component, MarkdownView, Menu, Notice, setIcon, TAbstractFile, TFile, TFolder } from "obsidian";
 import type { EditorView } from "@codemirror/view";
 import type QolPlugin from "../main";
-import { externalLinkIcon, folderNotePath, mergeNavigationOrder, parseNavigationOrder, parseSticker, resolveNoteLink } from "./model";
+import { externalLinkIcon, folderNotePath, imageFileIcon, mergeNavigationOrder, parseNavigationOrder, parseSticker, resolveNoteLink } from "./model";
 import { paintSticker, StickerPicker } from "./picker";
 import { refreshStickers, stickerExtension } from "./editor";
 
@@ -167,10 +167,10 @@ export class StickerManager extends Component {
 		return el;
 	}
 
-	createExternalSticker(document: Document, icon: string): HTMLElement {
+	createDefaultSticker(document: Document, icon: string): HTMLElement {
 		this.documents.add(document);
 		const el = document.createElement("span");
-		el.className = "qol-link-sticker qol-external-sticker";
+		el.className = "qol-link-sticker qol-default-sticker";
 		el.setAttribute("aria-hidden", "true");
 		setIcon(el, icon);
 		return el;
@@ -204,15 +204,19 @@ export class StickerManager extends Component {
 				key = `external:${icon}`;
 			} else {
 				file = this.resolveLink(href, source);
-				raw = file && this.rawSticker(file);
-				if (file && raw) key = JSON.stringify([file.path, raw]);
+				icon = file && imageFileIcon(file.extension);
+				if (icon) key = `image:${icon}`;
+				else {
+					raw = file && this.rawSticker(file);
+					if (file && raw) key = JSON.stringify([file.path, raw]);
+				}
 			}
 		}
 		const existing = link.querySelectorAll(".qol-link-sticker");
 		if (link.dataset.qolDecoration === key && existing.length === (key ? 1 : 0)) return;
 		existing.forEach(el => el.remove());
 		link.dataset.qolDecoration = key;
-		if (icon) link.prepend(this.createExternalSticker(link.ownerDocument, icon));
+		if (icon) link.prepend(this.createDefaultSticker(link.ownerDocument, icon));
 		else if (file && raw) link.prepend(this.createSticker(link.ownerDocument, file.path, raw, "qol-link-sticker"));
 	}
 
@@ -242,7 +246,7 @@ export class StickerManager extends Component {
 				}
 			}
 			for (const root of roots) {
-				if (container.contains(root) && !root.closest(".qol-sticker, .qol-external-sticker")) {
+				if (container.contains(root) && !root.closest(".qol-sticker, .qol-default-sticker")) {
 					this.decorateViewLinks(root, view);
 				}
 			}
@@ -314,7 +318,7 @@ export class StickerManager extends Component {
 		for (const observer of this.observers.values()) observer.disconnect();
 		this.observers.clear();
 		for (const document of this.documents) {
-			document.querySelectorAll(".qol-sticker, .qol-external-sticker").forEach(el => el.remove());
+			document.querySelectorAll(".qol-sticker, .qol-default-sticker").forEach(el => el.remove());
 			this.unwrapTitles(document);
 			document.querySelectorAll(".qol-tab-has-sticker").forEach(el => el.classList.remove("qol-tab-has-sticker"));
 			document.querySelectorAll<HTMLElement>("[data-qol-source]").forEach(el => {

@@ -169,6 +169,8 @@ for other web links. Host matching includes subdomains. An envelope is used for
 email, a phone for telephone links, and folder/file-type icons for `file://` and network
 file links (documents, images, audio, video, archives). Other URL schemes use an
 external-link icon. These follow the same editor/Reading-view visibility settings.
+Links to images within the vault, such as `[[photo.png]]` or `[Photo](photo.png)`,
+also get a fixed image icon without requiring frontmatter.
 
 Click a sticker to change or remove it. To add one, use **Quality of Life: Set/change
 note sticker**, the file's context menu, or the add-sticker button beside an undecorated

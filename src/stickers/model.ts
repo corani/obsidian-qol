@@ -31,6 +31,11 @@ export function resolveNoteLink(app: App, text: string, source: string): TFile |
 	return path ? app.metadataCache.getFirstLinkpathDest(path, source) : app.vault.getFileByPath(source);
 }
 
+export function imageFileIcon(extension: string): string | null {
+	return ["png", "jpg", "jpeg", "gif", "svg", "webp", "bmp", "heic", "avif"].includes(extension.toLowerCase())
+		? "image" : null;
+}
+
 export function externalLinkIcon(target: string): string | null {
 	if (/^(?:https?:\/\/|\/\/|www\.)/i.test(target)) {
 		const url = /^https?:\/\//i.test(target) ? target
@@ -55,7 +60,7 @@ export function externalLinkIcon(target: string): string | null {
 		if (/[/\\]$/.test(path)) return "folder";
 		const extension = path.match(/\.([a-z0-9]+)$/i)?.[1].toLowerCase();
 		if (extension === "pdf") return "file-text";
-		if (extension && ["png", "jpg", "jpeg", "gif", "svg", "webp", "bmp", "heic"].includes(extension)) return "image";
+		if (extension && imageFileIcon(extension)) return "image";
 		if (extension && ["mp3", "wav", "ogg", "flac", "m4a"].includes(extension)) return "music";
 		if (extension && ["mp4", "mkv", "mov", "webm", "avi"].includes(extension)) return "video";
 		if (extension && ["zip", "gz", "tar", "7z", "rar"].includes(extension)) return "archive";
