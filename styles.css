@@ -394,13 +394,13 @@
 	vertical-align: baseline;
 }
 
-.qol-external-sticker {
+.qol-default-sticker {
 	display: inline-flex;
 	vertical-align: text-bottom;
 	pointer-events: none;
 }
 
-.qol-external-sticker svg {
+.qol-default-sticker svg {
 	width: 1em;
 	height: 1em;
 }
