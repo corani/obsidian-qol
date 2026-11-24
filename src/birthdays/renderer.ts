@@ -4,7 +4,7 @@ import { resolvePersons, resolveAnchorDate, Person } from "./resolver";
 import type { BirthdaysSettings } from "../settings";
 
 function formatDate(d: Date): string {
-	return d.toISOString().slice(0, 10);
+	return `${String(d.getFullYear()).padStart(4, "0")}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
 function calcAge(born: Date, asOf: Date): number | null {
